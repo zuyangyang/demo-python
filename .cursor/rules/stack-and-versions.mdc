@@ -1,0 +1,65 @@
+---
+description: Document the application stack, resolved dependency versions, and best-practice notes
+alwaysApply: true
+---
+## Python API Stack and Dependency Versions
+
+- **Runtime**: Python >=3.10 (project requires `>=3.10`)
+
+### Application Framework
+- **FastAPI**: 0.119.0 (resolved)
+  - Depends on `starlette` and `pydantic`.
+  - Best practices:
+    - Prefer async endpoints for I/O.
+    - Use dependency injection for DB/services.
+    - Validate schemas with Pydantic v2 models.
+
+- **Starlette**: 0.48.0 (resolved)
+  - ASGI toolkit used under FastAPI.
+  - Best practices:
+    - Use middleware for cross-cutting concerns (CORS, auth, logging).
+
+### Data Validation and Settings
+- **Pydantic**: 2.12.2 (resolved)
+  - Best practices:
+    - Use `model_config` and field validators over legacy v1 patterns.
+    - Avoid runtime `.dict()` in hot paths; prefer `.model_dump()` in v2.
+
+- **pydantic-settings**: 2.11.0 (resolved)
+  - Best practices:
+    - Centralize configuration with an app `Settings` class.
+    - Load `.env` via `env_file` and keep secrets out of VCS.
+
+### ASGI Server
+- **Uvicorn[standard]**: 0.37.0 (resolved)
+  - Brings `httptools`, `uvloop` (on supported platforms), `websockets`.
+  - Best practices:
+    - Run with `--proxy-headers` behind reverse proxies.
+    - Enable `uvloop` in production; disable for debuggers if needed.
+
+### Testing and Tooling (dev)
+- **pytest**: (constraint >=8.0.0 in `pyproject.toml`; not locked in `uv.lock` because dev group is optional at resolve time)
+  - Best practices:
+    - Use `app/tests` structure; leverage `TestClient` for integration tests.
+
+- **httpx**: (constraint >=0.27.0; not locked)
+  - Best practices:
+    - Use `AsyncClient` for async tests; set timeouts explicitly.
+
+- **pytest-cov**: (constraint >=5.0.0; not locked)
+  - Best practices:
+    - Target coverage thresholds in CI; exclude generated files.
+
+- **ruff**: (constraint >=0.6.0; not locked)
+  - Best practices:
+    - Keep rules consistent with PEP 8; run in pre-commit.
+
+## Notes on Compatibility
+- FastAPI 0.119.0 pairs with Starlette 0.48.0 and Pydantic 2.x.
+- Ensure all models/schemas use Pydantic v2 APIs (`model_dump`, `field_validator`).
+- Python 3.10 is supported by all resolved versions above; newer Python may relax some conditional deps.
+
+## Operational Guidance
+- Pin versions in production for reproducibility; keep caret/greater-equal ranges only for development.
+- Use environment variables for config; do not commit `.env`.
+- Prefer structured logging and central error handling.
