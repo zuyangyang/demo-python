@@ -1,0 +1,259 @@
+---
+description: Python RESTful backend service project structure and best practices
+globs: **/*.py
+alwaysApply: true
+---
+
+# Python RESTful Backend Service Structure
+
+This rule defines the recommended directory structure and organization for Python RESTful backend services, following industry best practices for maintainability, scalability, and team collaboration.
+
+## Recommended Project Structure
+
+```
+project_name/
+├── app/                          # Main application package
+│   ├── __init__.py              # Package initialization
+│   ├── main.py                  # Application entry point
+│   ├── api/                     # API layer
+│   │   ├── __init__.py
+│   │   ├── v1/                  # API versioning
+│   │   │   ├── __init__.py
+│   │   │   ├── endpoints/       # Route handlers
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── users.py
+│   │   │   │   └── items.py
+│   │   │   ├── dependencies.py  # Dependency injection
+│   │   │   └── router.py        # API router configuration
+│   │   └── middleware/          # Custom middleware
+│   │       ├── __init__.py
+│   │       ├── auth.py
+│   │       └── logging.py
+│   ├── core/                    # Core functionality
+│   │   ├── __init__.py
+│   │   ├── config.py           # Configuration management
+│   │   ├── security.py         # Security utilities
+│   │   ├── database.py         # Database connection
+│   │   └── exceptions.py       # Custom exceptions
+│   ├── models/                  # Database models
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base model class
+│   │   ├── user.py
+│   │   └── item.py
+│   ├── schemas/                 # Pydantic schemas
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base schema class
+│   │   ├── user.py
+│   │   └── item.py
+│   ├── services/                # Business logic layer
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base service class
+│   │   ├── auth_service.py
+│   │   ├── user_service.py
+│   │   └── item_service.py
+│   ├── repositories/            # Data access layer
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base repository class
+│   │   ├── user_repository.py
+│   │   └── item_repository.py
+│   ├── utils/                   # Utility functions
+│   │   ├── __init__.py
+│   │   ├── helpers.py
+│   │   ├── validators.py
+│   │   └── formatters.py
+│   └── tests/                   # Test suite
+│       ├── __init__.py
+│       ├── conftest.py          # Pytest configuration
+│       ├── unit/                # Unit tests
+│       │   ├── __init__.py
+│       │   ├── test_services/
+│       │   └── test_utils/
+│       ├── integration/         # Integration tests
+│       │   ├── __init__.py
+│       │   └── test_api/
+│       └── fixtures/            # Test fixtures
+│           ├── __init__.py
+│           └── sample_data.py
+├── migrations/                  # Database migrations
+│   ├── versions/
+│   └── alembic.ini
+├── scripts/                     # Utility scripts
+│   ├── __init__.py
+│   ├── init_db.py
+│   └── seed_data.py
+├── docs/                        # Documentation
+│   ├── api/
+│   ├── deployment/
+│   └── development.md
+├── requirements/                # Dependency management
+│   ├── base.txt
+│   ├── development.txt
+│   ├── production.txt
+│   └── testing.txt
+├── .env.example                 # Environment variables template
+├── .gitignore                   # Git ignore rules
+├── .pre-commit-config.yaml     # Pre-commit hooks
+├── docker-compose.yml           # Docker Compose configuration
+├── Dockerfile                   # Docker configuration
+├── pyproject.toml              # Project configuration
+├── README.md                   # Project documentation
+└── Makefile                    # Build automation
+```
+
+## Key Directory Explanations
+
+### `/app` - Main Application Package
+- **Purpose**: Contains all application code
+- **Best Practice**: Keep this as the root package for your application
+
+### `/app/api` - API Layer
+- **Purpose**: Handles HTTP requests/responses and routing
+- **Structure**: Versioned APIs (v1, v2, etc.)
+- **Files**: Route handlers, middleware, dependencies
+
+### `/app/core` - Core Functionality
+- **Purpose**: Application-wide utilities and configuration
+- **Contains**: Config, security, database setup, custom exceptions
+
+### `/app/models` - Database Models
+- **Purpose**: SQLAlchemy or similar ORM models
+- **Best Practice**: One file per model, inherit from base model
+
+### `/app/schemas` - Data Validation
+- **Purpose**: Pydantic schemas for request/response validation
+- **Best Practice**: Separate schemas for requests, responses, and internal use
+
+### `/app/services` - Business Logic
+- **Purpose**: Contains business logic and orchestration
+- **Best Practice**: One service per domain, inject dependencies
+
+### `/app/repositories` - Data Access
+- **Purpose**: Database operations and data access patterns
+- **Best Practice**: Abstract database operations from business logic
+
+### `/app/utils` - Utility Functions
+- **Purpose**: Reusable utility functions
+- **Best Practice**: Pure functions, no business logic
+
+### `/app/tests` - Test Suite
+- **Purpose**: Comprehensive testing
+- **Structure**: Unit, integration, and end-to-end tests
+
+## File Naming Conventions
+
+- Use snake_case for all Python files
+- Use descriptive names that indicate purpose
+- Group related functionality in subdirectories
+- Use `__init__.py` files to make directories packages
+
+## Import Organization
+
+```python
+# Standard library imports
+import os
+import sys
+from typing import List, Optional
+
+# Third-party imports
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+
+# Local imports
+from app.core.config import settings
+from app.models.user import User
+from app.schemas.user import UserCreate, UserResponse
+from app.services.user_service import UserService
+```
+
+## Configuration Management
+
+```python
+# app/core/config.py
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    app_name: str = "My API"
+    debug: bool = False
+    database_url: str
+    secret_key: str
+    
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+```
+
+## Dependency Injection Pattern
+
+```python
+# app/api/dependencies.py
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.services.user_service import UserService
+
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    return UserService(db)
+```
+
+## Error Handling
+
+```python
+# app/core/exceptions.py
+class APIException(Exception):
+    def __init__(self, message: str, status_code: int = 400):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(self.message)
+```
+
+## Testing Structure
+
+```python
+# app/tests/conftest.py
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+@pytest.fixture
+def db_session():
+    # Database session for testing
+    pass
+```
+
+## Best Practices
+
+1. **Separation of Concerns**: Keep API, business logic, and data access separate
+2. **Dependency Injection**: Use FastAPI's dependency system for testability
+3. **Type Hints**: Always use type annotations for better IDE support
+4. **Error Handling**: Implement consistent error handling across the application
+5. **Testing**: Write comprehensive tests for all layers
+6. **Documentation**: Use docstrings and type hints for self-documenting code
+7. **Configuration**: Use environment variables for configuration
+8. **Security**: Implement proper authentication and authorization
+9. **Logging**: Use structured logging throughout the application
+10. **Database**: Use migrations for schema changes
+
+## Common Anti-Patterns to Avoid
+
+- ❌ Putting business logic in API endpoints
+- ❌ Direct database access from API layer
+- ❌ Hardcoded configuration values
+- ❌ Missing error handling
+- ❌ Inconsistent naming conventions
+- ❌ Missing type hints
+- ❌ No separation between environments
+- ❌ Inadequate testing coverage
+
+## Framework-Specific Considerations
+
+### FastAPI
+- Use dependency injection extensively
+- Leverage Pydantic for data validation
+- Use async/await for I/O operations
+- Implement proper OpenAPI documentation
