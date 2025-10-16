@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.storage_factory import get_document_repository
 from app.schemas.document import DocumentCreate, DocumentUpdate, DocumentOut, DocumentListResponse
 from app.services.document_service import DocumentService
-from app.repositories.document_repository import DocumentRepository
 from app.core.exceptions import DocumentNotFoundError
 
 router = APIRouter()
@@ -13,7 +13,7 @@ router = APIRouter()
 
 def get_document_service(db: Session = Depends(get_db)) -> DocumentService:
     """Dependency to get document service."""
-    repository = DocumentRepository()
+    repository = get_document_repository(db)
     return DocumentService(repository)
 
 

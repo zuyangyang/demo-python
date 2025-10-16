@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.exceptions import DocumentNotFoundError
 from app.core.websocket import websocket_manager
-from app.repositories.document_repository import DocumentRepository
+from app.core.storage_factory import get_document_repository
 from app.schemas.websocket import (
     JoinMessage,
     PingMessage,
@@ -41,7 +41,7 @@ async def websocket_endpoint(
     db = next(get_db())
     try:
         # Get document service
-        repository = DocumentRepository()
+        repository = get_document_repository(db)
         document_service = DocumentService(repository)
         
         # Verify document exists
@@ -99,7 +99,6 @@ async def websocket_endpoint(
                             # Add update to database with atomic sequence assignment
                             try:
                                 seq = repository.add_document_update(
-                                    db,
                                     document_id=document_id,
                                     op_id=update_msg.opId,
                                     actor_id=update_msg.actorId,
@@ -189,5 +188,6 @@ async def websocket_endpoint(
         except Exception as e:
             logger.error(f"Error cleaning up connection for user {userId}: {e}")
         finally:
-            # Close database session
-            db.close()
+            # Close database session (only if not None)
+            if db is not None:
+                db.close()

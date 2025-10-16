@@ -1,43 +1,44 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 
 from app.models.document import Document
 from app.schemas.document import DocumentCreate, DocumentUpdate, DocumentOut, DocumentListResponse
 from app.repositories.document_repository import DocumentRepository
+from app.repositories.memory_document_repository import MemoryDocumentRepository
+from app.core.storage_factory import get_document_repository
 from app.core.exceptions import DocumentNotFoundError
 
 
 class DocumentService:
     """Service for document business logic operations."""
     
-    def __init__(self, repository: DocumentRepository):
+    def __init__(self, repository: Union[DocumentRepository, MemoryDocumentRepository]):
         self.repository = repository
     
     def create_document(
         self, 
-        db: Session, 
+        db: Optional[Session], 
         *, 
         title: str, 
         owner_id: Optional[str] = None
     ) -> DocumentOut:
         """Create a new document."""
         document = self.repository.create_document(
-            db, 
             title=title, 
             owner_id=owner_id
         )
         return DocumentOut.model_validate(document)
     
-    def get_document(self, db: Session, *, document_id: str) -> DocumentOut:
+    def get_document(self, db: Optional[Session], *, document_id: str) -> DocumentOut:
         """Get a document by ID."""
-        document = self.repository.get_document(db, document_id)
+        document = self.repository.get_document(document_id)
         if not document:
             raise DocumentNotFoundError(f"Document with id {document_id} not found")
         return DocumentOut.model_validate(document)
     
     def get_documents(
         self, 
-        db: Session, 
+        db: Optional[Session], 
         *, 
         query: Optional[str] = None,
         include_deleted: bool = False,
@@ -46,7 +47,6 @@ class DocumentService:
     ) -> DocumentListResponse:
         """Get documents with filtering and pagination."""
         documents = self.repository.get_documents(
-            db,
             query=query,
             include_deleted=include_deleted,
             page=page,
@@ -54,7 +54,6 @@ class DocumentService:
         )
         
         total = self.repository.count_documents(
-            db,
             query=query,
             include_deleted=include_deleted
         )
@@ -68,7 +67,7 @@ class DocumentService:
     
     def update_document(
         self, 
-        db: Session, 
+        db: Optional[Session], 
         *, 
         document_id: str, 
         title: Optional[str] = None,
@@ -76,7 +75,6 @@ class DocumentService:
     ) -> DocumentOut:
         """Update a document's title and/or deleted status."""
         document = self.repository.update_document(
-            db,
             document_id=document_id,
             title=title,
             deleted=deleted
@@ -87,8 +85,8 @@ class DocumentService:
         
         return DocumentOut.model_validate(document)
     
-    def delete_document(self, db: Session, *, document_id: str) -> None:
+    def delete_document(self, db: Optional[Session], *, document_id: str) -> None:
         """Soft delete a document."""
-        document = self.repository.soft_delete_document(db, document_id=document_id)
+        document = self.repository.soft_delete_document(document_id=document_id)
         if not document:
             raise DocumentNotFoundError(f"Document with id {document_id} not found")

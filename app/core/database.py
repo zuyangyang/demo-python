@@ -1,31 +1,44 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
+from typing import Optional
 
-from app.core.config import settings
+from app.core.config import settings, StorageMode
 from app.models.base import Base
 
 
-# Create SQLite engine with appropriate configuration
-engine = create_engine(
-    settings.database_url,
-    # SQLite-specific configurations
-    poolclass=StaticPool,
-    connect_args={
-        "check_same_thread": False,  # Allow SQLite to work with multiple threads
-    },
-    echo=settings.debug,  # Log SQL queries in debug mode
-)
+# Create engine based on storage mode
+if settings.storage_mode == StorageMode.SQLITE:
+    engine = create_engine(
+        settings.database_url,
+        # SQLite-specific configurations
+        poolclass=StaticPool,
+        connect_args={
+            "check_same_thread": False,  # Allow SQLite to work with multiple threads
+        },
+        echo=settings.debug,  # Log SQL queries in debug mode
+    )
+    # Create session factory
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+else:
+    # Memory mode - no engine needed
+    engine = None
+    SessionLocal = None
 
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-def get_db() -> Session:
+def get_db() -> Optional[Session]:
     """
     Dependency to get database session.
     Yields a database session and ensures it's closed after use.
+    Returns None for memory mode.
     """
+    if settings.storage_mode == StorageMode.MEMORY:
+        yield None
+        return
+    
+    if SessionLocal is None:
+        raise RuntimeError("Database not initialized for SQLite mode")
+    
     db = SessionLocal()
     try:
         yield db
@@ -37,15 +50,24 @@ def create_tables():
     """
     Create all database tables.
     This should be called on application startup.
+    Only applies to SQLite mode.
     """
-    Base.metadata.create_all(bind=engine)
+    if settings.storage_mode == StorageMode.SQLITE and engine is not None:
+        Base.metadata.create_all(bind=engine)
 
 
 def check_connection() -> bool:
     """
     Check database connection by executing a simple query.
     Returns True if connection is successful, False otherwise.
+    For memory mode, always returns True.
     """
+    if settings.storage_mode == StorageMode.MEMORY:
+        return True
+    
+    if engine is None:
+        return False
+    
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
@@ -58,7 +80,16 @@ def clear_tables():
     """
     Clear all data from all tables.
     This should be used for testing purposes only.
+    For memory mode, clears in-memory storage.
     """
+    if settings.storage_mode == StorageMode.MEMORY:
+        from app.core.memory_storage import memory_storage
+        memory_storage.clear_all()
+        return
+    
+    if engine is None:
+        return
+    
     # First, dispose of all existing connections to prevent locks
     engine.dispose()
     
