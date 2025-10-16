@@ -15,6 +15,9 @@ from app.schemas.websocket import (
     JoinMessage,
     PingMessage,
     PresenceMessage,
+    UpdateMessage,
+    AckMessage,
+    RemoteUpdateMessage,
 )
 from app.services.document_service import DocumentService
 
@@ -87,6 +90,65 @@ async def websocket_endpoint(
                         # Handle ping (keepalive)
                         ping_msg = PingMessage.model_validate(message_data)
                         logger.debug(f"User {userId} pinged document {document_id} at {ping_msg.ts}")
+                    
+                    elif message_type == "update":
+                        # Handle document update
+                        try:
+                            update_msg = UpdateMessage.model_validate(message_data)
+                            
+                            # Add update to database with atomic sequence assignment
+                            try:
+                                seq = repository.add_document_update(
+                                    db,
+                                    document_id=document_id,
+                                    op_id=update_msg.opId,
+                                    actor_id=update_msg.actorId,
+                                    delta_b64=update_msg.deltaB64
+                                )
+                                
+                                # Send ack to the sender
+                                ack_msg = AckMessage(opId=update_msg.opId, seq=seq)
+                                await room.send_to_user(userId, ack_msg.model_dump())
+                                
+                                # Broadcast remote update to all other users in the room
+                                remote_update_msg = RemoteUpdateMessage(
+                                    seq=seq,
+                                    deltaB64=update_msg.deltaB64,
+                                    actorId=update_msg.actorId
+                                )
+                                await room.broadcast_except_user(
+                                    userId, 
+                                    remote_update_msg.model_dump()
+                                )
+                                
+                                logger.info(f"Processed update {update_msg.opId} with seq {seq} from user {userId}")
+                                
+                            except ValueError as e:
+                                # Invalid base64 or other validation error
+                                await room.send_error(
+                                    userId,
+                                    "INVALID_UPDATE",
+                                    str(e)
+                                )
+                                logger.warning(f"Invalid update from user {userId}: {e}")
+                            
+                            except Exception as e:
+                                # Database error (e.g., duplicate op_id)
+                                await room.send_error(
+                                    userId,
+                                    "UPDATE_FAILED",
+                                    "Failed to process update"
+                                )
+                                logger.error(f"Failed to process update from user {userId}: {e}")
+                        
+                        except Exception as e:
+                            # Message validation error
+                            await room.send_error(
+                                userId,
+                                "INVALID_MESSAGE",
+                                f"Invalid update message: {e}"
+                            )
+                            logger.warning(f"Invalid update message from user {userId}: {e}")
                     
                     else:
                         # Unknown message type

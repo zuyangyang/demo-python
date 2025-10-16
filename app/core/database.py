@@ -59,9 +59,42 @@ def clear_tables():
     Clear all data from all tables.
     This should be used for testing purposes only.
     """
-    with engine.connect() as connection:
-        # Delete all data from all tables
-        connection.execute(text("DELETE FROM document_updates"))
-        connection.execute(text("DELETE FROM document_snapshots"))
-        connection.execute(text("DELETE FROM documents"))
-        connection.commit()
+    # First, dispose of all existing connections to prevent locks
+    engine.dispose()
+    
+    # Wait a moment for connections to close
+    import time
+    time.sleep(0.1)
+    
+    try:
+        with engine.connect() as connection:
+            # Use PRAGMA to optimize for testing
+            connection.execute(text("PRAGMA foreign_keys = OFF"))
+            # Delete all data from all tables
+            connection.execute(text("DELETE FROM document_updates"))
+            connection.execute(text("DELETE FROM document_snapshots"))
+            connection.execute(text("DELETE FROM documents"))
+            # Reset autoincrement sequences if the table exists
+            try:
+                connection.execute(text("DELETE FROM sqlite_sequence WHERE name IN ('documents', 'document_snapshots', 'document_updates')"))
+            except Exception:
+                # sqlite_sequence table doesn't exist yet, that's fine
+                pass
+            connection.execute(text("PRAGMA foreign_keys = ON"))
+            connection.commit()
+    except Exception as e:
+        # If still locked, try one more time with a longer wait
+        time.sleep(0.5)
+        engine.dispose()
+        with engine.connect() as connection:
+            connection.execute(text("PRAGMA foreign_keys = OFF"))
+            connection.execute(text("DELETE FROM document_updates"))
+            connection.execute(text("DELETE FROM document_snapshots"))
+            connection.execute(text("DELETE FROM documents"))
+            try:
+                connection.execute(text("DELETE FROM sqlite_sequence WHERE name IN ('documents', 'document_snapshots', 'document_updates')"))
+            except Exception:
+                # sqlite_sequence table doesn't exist yet, that's fine
+                pass
+            connection.execute(text("PRAGMA foreign_keys = ON"))
+            connection.commit()

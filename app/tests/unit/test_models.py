@@ -128,7 +128,7 @@ class TestDocumentModels:
         # Create a snapshot
         snapshot = DocumentSnapshot(
             document_id="test-doc-123",
-            version="1",
+            version=1,
             snapshot_blob=b"test snapshot data"
         )
         
@@ -140,7 +140,7 @@ class TestDocumentModels:
             DocumentSnapshot.document_id == "test-doc-123"
         ).first()
         assert retrieved_snapshot is not None
-        assert retrieved_snapshot.version == "1"
+        assert retrieved_snapshot.version == 1
         assert retrieved_snapshot.snapshot_blob == b"test snapshot data"
     
     def test_document_update_model_creation(self, session):
@@ -154,7 +154,7 @@ class TestDocumentModels:
         update = DocumentUpdate(
             id="update-123",
             document_id="test-doc-123",
-            seq="1",
+            seq=1,
             op_id="op-123",
             actor_id="user-123",
             delta_blob=b"test delta data"
@@ -169,7 +169,7 @@ class TestDocumentModels:
         ).first()
         assert retrieved_update is not None
         assert retrieved_update.document_id == "test-doc-123"
-        assert retrieved_update.seq == "1"
+        assert retrieved_update.seq == 1
         assert retrieved_update.op_id == "op-123"
         assert retrieved_update.actor_id == "user-123"
         assert retrieved_update.delta_blob == b"test delta data"
@@ -184,13 +184,13 @@ class TestDocumentModels:
         # Create snapshots and updates
         snapshot = DocumentSnapshot(
             document_id="test-doc-123",
-            version="1",
+            version=1,
             snapshot_blob=b"snapshot data"
         )
         update = DocumentUpdate(
             id="update-123",
             document_id="test-doc-123",
-            seq="1",
+            seq=1,
             op_id="op-123",
             actor_id="user-123",
             delta_blob=b"delta data"
@@ -204,5 +204,5 @@ class TestDocumentModels:
         retrieved_doc = session.query(Document).filter(Document.id == "test-doc-123").first()
         assert len(retrieved_doc.snapshots) == 1
         assert len(retrieved_doc.updates) == 1
-        assert retrieved_doc.snapshots[0].version == "1"
+        assert retrieved_doc.snapshots[0].version == 1
         assert retrieved_doc.updates[0].op_id == "op-123"

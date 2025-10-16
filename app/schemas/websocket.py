@@ -34,6 +34,16 @@ class PingMessage(WebSocketMessage):
     ts: int = Field(..., description="Timestamp")
 
 
+class UpdateMessage(WebSocketMessage):
+    """Client update message."""
+    
+    type: str = Field(default="update", description="Message type")
+    opId: str = Field(..., description="Unique operation ID")
+    baseVersion: int = Field(..., description="Base version for diagnostics")
+    actorId: str = Field(..., description="Actor identifier")
+    deltaB64: str = Field(..., description="Base64 encoded delta")
+
+
 class StateMessage(WebSocketMessage):
     """Server state message."""
     
@@ -49,6 +59,23 @@ class PresenceUpdateMessage(WebSocketMessage):
     userId: str = Field(..., description="User identifier")
     cursor: Optional[Dict[str, Any]] = Field(None, description="Cursor position")
     color: Optional[str] = Field(None, description="User color")
+
+
+class AckMessage(WebSocketMessage):
+    """Server acknowledgment message."""
+    
+    type: str = Field(default="ack", description="Message type")
+    opId: str = Field(..., description="Operation ID being acknowledged")
+    seq: int = Field(..., description="Assigned sequence number")
+
+
+class RemoteUpdateMessage(WebSocketMessage):
+    """Server remote update message."""
+    
+    type: str = Field(default="remote_update", description="Message type")
+    seq: int = Field(..., description="Sequence number")
+    deltaB64: str = Field(..., description="Base64 encoded delta")
+    actorId: str = Field(..., description="Actor identifier")
 
 
 class ErrorMessage(WebSocketMessage):

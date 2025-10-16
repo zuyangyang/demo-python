@@ -94,6 +94,16 @@ class DocumentRoom:
             )
             await self._send_to_user(user_id, error_msg.model_dump())
     
+    async def send_to_user(self, user_id: str, message: Dict) -> None:
+        """Send message to a specific user."""
+        await self._send_to_user(user_id, message)
+    
+    async def broadcast_except_user(self, exclude_user_id: str, message: Dict) -> None:
+        """Broadcast message to all users except the specified user."""
+        for user_id, websocket in self.connections.items():
+            if user_id != exclude_user_id:
+                await self._send_to_user(user_id, message)
+    
     async def _broadcast_presence_update(
         self, 
         presence: UserPresence, 

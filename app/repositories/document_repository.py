@@ -1,11 +1,12 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
+from sqlalchemy import and_, or_, desc, func, text
 from datetime import datetime, timezone
 import uuid
+import base64
 
-from app.models.document import Document
-from app.schemas.document import DocumentCreate, DocumentUpdate
+from app.models.document import Document, DocumentUpdate
+from app.schemas.document import DocumentCreate, DocumentUpdate as DocumentUpdateSchema
 from app.repositories.base import BaseRepository
 
 
@@ -121,3 +122,107 @@ class DocumentRepository(BaseRepository[Document, DocumentCreate, DocumentUpdate
             document_id=document_id, 
             deleted=True
         )
+    
+    def add_document_update(
+        self, 
+        db: Session, 
+        *, 
+        document_id: str, 
+        op_id: str, 
+        actor_id: str, 
+        delta_b64: str
+    ) -> int:
+        """
+        Add a document update with atomic sequence assignment.
+        
+        Args:
+            db: Database session
+            document_id: ID of the document
+            op_id: Unique operation ID for deduplication
+            actor_id: ID of the actor making the update
+            delta_b64: Base64 encoded delta data
+            
+        Returns:
+            The assigned sequence number
+            
+        Raises:
+            IntegrityError: If op_id already exists
+        """
+        # Decode base64 delta
+        try:
+            delta_blob = base64.b64decode(delta_b64)
+        except Exception as e:
+            raise ValueError(f"Invalid base64 delta data: {e}")
+        
+        # Get next sequence number atomically
+        # Use a transaction to ensure atomicity
+        with db.begin_nested():
+            # Get the maximum sequence number for this document
+            max_seq_result = db.execute(
+                text("SELECT COALESCE(MAX(seq), 0) FROM document_updates WHERE document_id = :doc_id"),
+                {"doc_id": document_id}
+            ).scalar()
+            
+            next_seq = (max_seq_result or 0) + 1
+            
+            # Create the update record
+            update_id = str(uuid.uuid4())
+            update = DocumentUpdate(
+                id=update_id,
+                document_id=document_id,
+                seq=next_seq,
+                op_id=op_id,
+                actor_id=actor_id,
+                delta_blob=delta_blob
+            )
+            
+            db.add(update)
+            db.flush()  # Flush to check for op_id uniqueness constraint
+            
+            return next_seq
+    
+    def get_document_updates_after_version(
+        self, 
+        db: Session, 
+        *, 
+        document_id: str, 
+        after_version: int
+    ) -> List[DocumentUpdate]:
+        """
+        Get all document updates after a specific version.
+        
+        Args:
+            db: Database session
+            document_id: ID of the document
+            after_version: Version number to get updates after
+            
+        Returns:
+            List of updates ordered by sequence number
+        """
+        return db.query(DocumentUpdate)\
+            .filter(
+                and_(
+                    DocumentUpdate.document_id == document_id,
+                    DocumentUpdate.seq > after_version
+                )
+            )\
+            .order_by(DocumentUpdate.seq)\
+            .all()
+    
+    def get_document_latest_sequence(self, db: Session, *, document_id: str) -> int:
+        """
+        Get the latest sequence number for a document.
+        
+        Args:
+            db: Database session
+            document_id: ID of the document
+            
+        Returns:
+            Latest sequence number, or 0 if no updates exist
+        """
+        result = db.execute(
+            text("SELECT COALESCE(MAX(seq), 0) FROM document_updates WHERE document_id = :doc_id"),
+            {"doc_id": document_id}
+        ).scalar()
+        
+        return result if result is not None else 0

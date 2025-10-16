@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Integer
 from sqlalchemy.dialects.sqlite import BLOB
 from sqlalchemy.orm import relationship
 
@@ -26,7 +26,7 @@ class DocumentSnapshot(Base, TimestampMixin):
     __tablename__ = "document_snapshots"
     
     document_id = Column(String, ForeignKey("documents.id"), nullable=False, primary_key=True)
-    version = Column(String, nullable=False, primary_key=True)  # Composite primary key
+    version = Column(Integer, nullable=False, primary_key=True)  # Composite primary key
     snapshot_blob = Column(BLOB, nullable=False)
     
     # Relationships
@@ -40,7 +40,7 @@ class DocumentUpdate(Base, TimestampMixin):
     
     id = Column(String, primary_key=True)  # UUID as string
     document_id = Column(String, ForeignKey("documents.id"), nullable=False)
-    seq = Column(String, nullable=False)  # Sequence number as string
+    seq = Column(Integer, nullable=False)  # Sequence number
     op_id = Column(String, unique=True, nullable=False)  # Operation ID for deduplication
     actor_id = Column(String, nullable=False)
     delta_blob = Column(BLOB, nullable=False)
