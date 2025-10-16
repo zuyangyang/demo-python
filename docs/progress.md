@@ -23,16 +23,22 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Added comprehensive unit and integration tests
     - Health endpoint verified manually: returns `{"status":"ok"}`
 
-- [ ] Step 2: Models and Schemas
+- [x] Step 2: Models and Schemas
   - Deliverables:
-    - SQLAlchemy models: `documents`, `document_snapshots`, `document_updates`
-    - Pydantic v2 schemas: `DocumentCreate`, `DocumentUpdate`, `DocumentOut`
-    - Table creation on app startup for dev
+    - SQLAlchemy models: `documents`, `document_snapshots`, `document_updates` ✅
+    - Pydantic v2 schemas: `DocumentCreate`, `DocumentUpdate`, `DocumentOut` ✅
+    - Table creation on app startup for dev ✅
   - Tests:
-    - Unit: model metadata creates tables in an in-memory SQLite; constraints present
-    - Unit: schema validation (title length ≤ 256, non-empty)
+    - Unit: model metadata creates tables in an in-memory SQLite; constraints present ✅
+    - Unit: schema validation (title length ≤ 256, non-empty) ✅
   - Run:
-    - `pytest -k models`
+    - `pytest -k models` ✅ (22 tests passed)
+  - Notes:
+    - Created comprehensive SQLAlchemy models with proper foreign key relationships
+    - Implemented Pydantic v2 schemas with validation for title length and whitespace
+    - Added table creation on app startup via `create_tables()` function
+    - All models include proper timestamps via `TimestampMixin`
+    - Verified table creation works correctly in SQLite database
 
 - [ ] Step 3: Document CRUD (REST)
   - Deliverables:

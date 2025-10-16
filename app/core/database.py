@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
+from app.models.base import Base
 
 
 # Create SQLite engine with appropriate configuration
@@ -30,6 +31,14 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
+
+def create_tables():
+    """
+    Create all database tables.
+    This should be called on application startup.
+    """
+    Base.metadata.create_all(bind=engine)
 
 
 def check_connection() -> bool:
