@@ -22,6 +22,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Implemented `check_connection()` function for database health checks
     - Added comprehensive unit and integration tests
     - Health endpoint verified manually: returns `{"status":"ok"}`
+    - Foundation ready for in-memory mode implementation in Step 6
 
 - [x] Step 2: Models and Schemas
   - Deliverables:
@@ -39,6 +40,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Added table creation on app startup via `create_tables()` function
     - All models include proper timestamps via `TimestampMixin`
     - Verified table creation works correctly in SQLite database
+    - Models and schemas will be reused for in-memory mode implementation
 
 - [x] Step 3: Document CRUD (REST)
   - Deliverables:
@@ -56,6 +58,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Fixed test isolation issues with database clearing between tests
     - Updated datetime usage to avoid deprecation warnings
     - All endpoints properly integrated into the API router
+    - REST endpoints will work with both SQLite and in-memory modes
 
 - [x] Step 4: WebSocket scaffold (join/state/presence)
   - Deliverables:
@@ -73,6 +76,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Added proper error handling and message validation
     - Fixed DocumentService initialization in WebSocket endpoint
     - All WebSocket functionality working correctly
+    - WebSocket features will work with both SQLite and in-memory storage modes
 
 - [x] Step 5: Update handling and sequencing
   - Deliverables:
@@ -90,7 +94,26 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Created comprehensive unit tests covering all scenarios
     - Integration tests have SQLite lock issues that need resolution
     - All core functionality is working correctly
-- [ ] Step 6: Snapshot persistence
+    - Update handling will work with both SQLite and in-memory storage modes
+- [ ] Step 6: In-memory mode implementation
+  - Deliverables:
+    - Configuration option to enable in-memory mode (DATABASE_URL=memory://)
+    - In-memory storage for documents, snapshots, and updates using Python dictionaries
+    - All existing features (CRUD, WebSocket, updates, presence) work in memory mode
+    - Memory-based repository implementations that mirror SQLite functionality
+  - Tests:
+    - Unit: in-memory repositories handle CRUD operations correctly
+    - Integration: WebSocket functionality works with in-memory storage
+    - Integration: Update sequencing and snapshot persistence work in memory
+    - Configuration: app starts correctly with both SQLite and memory modes
+  - Run:
+    - `pytest -k "memory or inmemory"`
+  - Notes:
+    - Maintains all existing functionality without database persistence
+    - Useful for testing, demos, and development scenarios
+    - Data is lost on application restart (by design)
+
+- [ ] Step 7: Snapshot persistence
   - Deliverables:
     - Repository methods to write and read snapshots
     - Policy: after N updates (config), accept `snapshotB64` message to persist
@@ -101,7 +124,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
   - Run:
     - `pytest -k snapshot`
 
-- [ ] Step 7: Presence lifecycle
+- [ ] Step 8: Presence lifecycle
   - Deliverables:
     - `presence` messages update in-memory cursors; broadcast to peers
     - Idle timeout removes presence
@@ -110,7 +133,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
   - Run:
     - `pytest -k presence`
 
-- [ ] Step 8: Tests hardening
+- [ ] Step 9: Tests hardening
   - Deliverables:
     - Unit tests for repositories/services (CRUD, updates, snapshots)
     - Integration tests covering REST + WS happy paths and common errors
@@ -119,7 +142,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
   - Run:
     - `pytest --maxfail=1 -q`
 
-- [ ] Step 9: DX polish
+- [ ] Step 10: DX polish
   - Deliverables:
     - README quickstart, `uvicorn` command, env sample
     - Optional: simple demo script to echo WS updates
@@ -130,6 +153,7 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
 
 Notes
 - Use SQLite (file) for local dev; keep write transactions short
+- In-memory mode available for testing and demos (DATABASE_URL=memory://)
 - Clients must use the same CRDT wire format; server treats deltas as opaque
 
 

@@ -50,6 +50,10 @@ Out-of-scope features (delegated to other services): version history, comments, 
     - remote_update: {type: "remote_update", seq, deltaB64, actorId}
     - presence: {type: "presence", userId, cursor}
     - error: {type: "error", code, message}
+- Storage Modes
+  - SQLite mode (default): Persistent storage using SQLite database file
+  - In-memory mode: All data stored in memory using Python dictionaries
+  - Mode selection via DATABASE_URL configuration (sqlite:///./dev.db vs memory://)
 - CRDT Strategy
   - Clients run CRDT; server relays opaque updates (deltaB64) and persists them
   - Idempotency via opId (unique per client op)
@@ -61,19 +65,25 @@ Out-of-scope features (delegated to other services): version history, comments, 
   - Broadcast-only, best effort, not persisted
 
 ## 5. Non‑Functional Requirements
-- Local development with SQLite file DB (default dev.db)
+- Storage Options:
+  - SQLite file DB (default dev.db) for persistent development
+  - In-memory mode (memory://) for testing, demos, and ephemeral scenarios
 - Performance (local):
   - Connect and receive state < 300 ms for medium docs (≤ 200 KB snapshot)
   - Broadcast latency p50 < 50 ms, p95 < 150 ms under 10 concurrent editors per doc
+  - In-memory mode: faster startup and operations, no I/O overhead
 - Reliability
-  - Durable storage of updates and latest snapshot
-  - Sequence monotonicity per document
-  - On restart, join flow reconstructs head state by snapshot + updates
+  - SQLite mode: Durable storage of updates and latest snapshot
+  - In-memory mode: Data lost on restart (by design for testing/demos)
+  - Sequence monotonicity per document in both modes
+  - On restart (SQLite), join flow reconstructs head state by snapshot + updates
 - Observability
   - Structured logs with docId/userId/opId/seq where relevant
   - Minimal counters (connections per doc, updates/sec, snapshot events) if added later
+  - Log storage mode on startup for debugging
 
-## 6. Data Model (SQLite)
+## 6. Data Model
+### SQLite Storage
 - documents
   - id (uuid TEXT PK)
   - title (TEXT, ≤ 256)
@@ -96,6 +106,13 @@ Out-of-scope features (delegated to other services): version history, comments, 
   - delta_blob (BLOB)
   - created_at (DATETIME)
   - INDEX(document_id, seq)
+
+### In-Memory Storage
+- Same data structure as SQLite but stored in Python dictionaries
+- documents: Dict[str, Document] keyed by document ID
+- document_snapshots: Dict[str, List[DocumentSnapshot]] keyed by document ID
+- document_updates: Dict[str, List[DocumentUpdate]] keyed by document ID
+- All operations maintain the same interface as SQLite repositories
 
 ## 7. API Specifications (v1)
 - POST /api/v1/documents
@@ -144,14 +161,17 @@ Errors: 400 validation, 404 not found.
 2) Document CRUD endpoints and schemas
 3) WS endpoint with join/state/presence scaffolding
 4) Update handling with seq assignment and broadcast
-5) Snapshot write/read path and compaction (optional)
-6) Basic tests: CRUD and WS happy paths
-7) DX: README commands and example clients
+5) In-memory mode implementation for testing and demos
+6) Snapshot write/read path and compaction (optional)
+7) Basic tests: CRUD and WS happy paths
+8) DX: README commands and example clients
 
 ## 13. Acceptance Criteria
-- CRUD endpoints work with SQLite and pass unit/integration tests
-- Two WS clients can join the same doc, exchange updates, and converge
-- Server persists updates and snapshot; reconnecting client receives correct state
+- CRUD endpoints work with both SQLite and in-memory modes and pass unit/integration tests
+- Two WS clients can join the same doc, exchange updates, and converge in both storage modes
+- Server persists updates and snapshot in SQLite mode; reconnecting client receives correct state
+- In-memory mode provides same functionality without persistence (data lost on restart)
 - Presence messages are seen by peers, and disconnects clean up presence state
+- Configuration switching between storage modes works seamlessly
 
 
