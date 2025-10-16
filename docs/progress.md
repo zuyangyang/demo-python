@@ -57,16 +57,22 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - Updated datetime usage to avoid deprecation warnings
     - All endpoints properly integrated into the API router
 
-- [ ] Step 4: WebSocket scaffold (join/state/presence)
+- [x] Step 4: WebSocket scaffold (join/state/presence)
   - Deliverables:
-    - `GET /ws/documents/{id}` WS endpoint
-    - In-memory room registry per document; presence broadcast on join/leave
-    - On join: server responds with `state` using latest snapshot (or empty if none)
+    - `GET /ws/documents/{id}` WS endpoint ✅
+    - In-memory room registry per document; presence broadcast on join/leave ✅
+    - On join: server responds with `state` using latest snapshot (or empty if none) ✅
   - Tests:
-    - Integration (WS): two clients connect; both receive `state`; presence events seen by peer
-    - Disconnect cleans up presence (peer receives leave or presence removal)
+    - Integration (WS): two clients connect; both receive `state`; presence events seen by peer ✅
+    - Disconnect cleans up presence (peer receives leave or presence removal) ✅
   - Run:
-    - `pytest -k websocket`
+    - `pytest -k websocket` ✅ (28 tests passed)
+  - Notes:
+    - Created comprehensive WebSocket infrastructure with room management
+    - Implemented presence broadcasting and cleanup on disconnect
+    - Added proper error handling and message validation
+    - Fixed DocumentService initialization in WebSocket endpoint
+    - All WebSocket functionality working correctly
 
 - [ ] Step 5: Update handling and sequencing
   - Deliverables:
