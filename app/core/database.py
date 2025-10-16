@@ -52,3 +52,16 @@ def check_connection() -> bool:
         return True
     except Exception:
         return False
+
+
+def clear_tables():
+    """
+    Clear all data from all tables.
+    This should be used for testing purposes only.
+    """
+    with engine.connect() as connection:
+        # Delete all data from all tables
+        connection.execute(text("DELETE FROM document_updates"))
+        connection.execute(text("DELETE FROM document_snapshots"))
+        connection.execute(text("DELETE FROM documents"))
+        connection.commit()

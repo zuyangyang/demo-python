@@ -40,15 +40,22 @@ This document is the authoritative step plan. Each step lists: deliverables, tes
     - All models include proper timestamps via `TimestampMixin`
     - Verified table creation works correctly in SQLite database
 
-- [ ] Step 3: Document CRUD (REST)
+- [x] Step 3: Document CRUD (REST)
   - Deliverables:
-    - Endpoints in `app/api/v1/endpoints/documents.py` (POST/GET/PATCH/DELETE/GET list)
-    - Service layer methods with proper timestamps and soft-delete
+    - Endpoints in `app/api/v1/endpoints/documents.py` (POST/GET/PATCH/DELETE/GET list) ✅
+    - Service layer methods with proper timestamps and soft-delete ✅
   - Tests:
-    - Integration: create -> get -> list contains -> patch title -> delete -> list excludes unless `include_deleted`
-    - Edge: invalid title returns 400; unknown id returns 404
+    - Integration: create -> get -> list contains -> patch title -> delete -> list excludes unless `include_deleted` ✅
+    - Edge: invalid title returns 400; unknown id returns 404 ✅
   - Run:
-    - `pytest -k "documents and not websocket"`
+    - `pytest -k "documents and not websocket"` ✅ (35 tests passed)
+  - Notes:
+    - Created comprehensive repository and service layers following the project structure
+    - Implemented all REST endpoints with proper error handling and validation
+    - Added comprehensive integration tests covering all CRUD operations and edge cases
+    - Fixed test isolation issues with database clearing between tests
+    - Updated datetime usage to avoid deprecation warnings
+    - All endpoints properly integrated into the API router
 
 - [ ] Step 4: WebSocket scaffold (join/state/presence)
   - Deliverables:
