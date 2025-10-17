@@ -6,25 +6,25 @@ This document tracks the implementation progress phase-by-phase. Each step inclu
 
 ### Phase 0 — Project scaffolding and foundations
 
-- [ ] Scaffold FastAPI app with structured layout and config
+- [x] Scaffold FastAPI app with structured layout and config
   - Deliverables: `app/main.py`, `app/api/v1/router.py`, `app/core/{config,exceptions}.py`, `app/tests/*`, `README` updates
   - Test plan
     - Unit
-      - Ensure app loads without exceptions (import smoke test).
-      - Validate settings defaults and env parsing with Pydantic v2.
-      - Error handler returns JSON structure for known exceptions.
+      - [x] Ensure app loads without exceptions (import smoke test).
+      - [x] Validate settings defaults and env parsing with Pydantic v2.
+      - [x] Error handler returns JSON structure for known exceptions.
     - Integration
-      - `GET /healthz` returns 200 `{ "ok": true }`.
-      - `GET /metrics` returns 200 and JSON with expected keys.
-      - Run uvicorn locally: app starts and serves both endpoints.
+      - [x] `GET /healthz` returns 200 `{ "ok": true }`.
+      - [x] `GET /metrics` returns 200 and JSON with expected keys.
+      - [x] Run uvicorn locally: app starts and serves both endpoints.
     - Tooling
-      - Ruff/flake checks pass; pytest runs zero tests without failure.
+      - [x] Ruff/flake checks pass; pytest runs zero tests without failure.
 
-- [ ] Logging & error handling baselines
+- [x] Logging & error handling baselines
   - Deliverables: structured logs (roomId, userId if present), exception middleware
   - Test plan
-    - Unit: simulated exception triggers correct HTTP status and body.
-    - Integration: 404/422 paths return structured JSON; logs contain correlation ids.
+    - [x] Unit: simulated exception triggers correct HTTP status and body.
+    - [x] Integration: 404/422 paths return structured JSON; logs contain correlation ids.
 
 ---
 
