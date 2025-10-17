@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import json
 
 from fastapi import APIRouter, HTTPException, Path, Query, WebSocket, WebSocketDisconnect
 
@@ -15,6 +16,7 @@ async def ws_room(
     websocket: WebSocket,
     room_id: str = Path(min_length=1),
     userId: str | None = Query(default=None),
+    lastSeq: int | None = Query(default=None),
 ) -> None:
     # accept connection after verifying room exists and userId provided
     state = await room_registry.get_room(room_id)
@@ -28,15 +30,44 @@ async def ws_room(
 
     await websocket.accept()
     await _register_connection(state, websocket)
-    
-    # Send current presence state to new connection
+
+    # Send replay first if requested for deterministic ordering in tests
+    if lastSeq is not None:
+        updates = await room_registry.get_updates_after(room_id, lastSeq)
+        for seq, payload in updates:
+            try:
+                await websocket.send_bytes(payload)
+            except Exception:
+                continue
+    # Then send current presence state to new connection
     await _send_current_presence(state, websocket)
     
     try:
         # Enhanced presence echo protocol with error handling
         while True:
             try:
-                data: Any = await websocket.receive_json()
+                # Accept either JSON presence or binary CRDT updates
+                message = await websocket.receive()
+                if message.get("type") == "websocket.disconnect":
+                    break
+                if message.get("type") == "websocket.receive" and message.get("bytes") is not None:
+                    update_bytes = message["bytes"]
+                    seq = await room_registry.append_update(room_id, update_bytes)
+                    # Broadcast binary to others
+                    await _broadcast_bytes(state, websocket, update_bytes)
+                    continue
+
+                # Handle text JSON frames
+                data: Any = None
+                if isinstance(message, dict) and message.get("type") == "websocket.receive" and message.get("text") is not None:
+                    try:
+                        data = json.loads(message["text"])
+                    except Exception:
+                        await websocket.send_json({"type": "error", "message": "Invalid JSON"})
+                        continue
+                else:
+                    # Not bytes and not text json, ignore
+                    continue
                 
                 # Validate presence data structure
                 if not _is_valid_presence_data(data):
@@ -63,6 +94,9 @@ async def ws_room(
                     "message": f"Invalid JSON: {str(e)}"
                 })
                 continue
+            except RuntimeError:
+                # Disconnected; exit loop gracefully
+                break
                 
     except WebSocketDisconnect:
         pass
@@ -91,6 +125,15 @@ async def _broadcast(state: RoomState, sender: WebSocket, data: Any) -> None:
             await ws.send_json(data)
         except Exception:
             # Best effort: ignore errors when sending
+            continue
+
+
+async def _broadcast_bytes(state: RoomState, sender: WebSocket, payload: bytes) -> None:
+    targets = [ws for ws in state.connections if ws is not sender]
+    for ws in targets:
+        try:
+            await ws.send_bytes(payload)
+        except Exception:
             continue
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Path
+from fastapi import Body
 
 from app.schemas.room import RoomCreateRequest, RoomResponse
 from app.services.room_registry import room_registry
@@ -38,5 +39,40 @@ async def delete_room(room_id: str = Path(min_length=1)) -> dict[str, bool]:
     if not ok:
         raise HTTPException(status_code=404, detail={"message": "room not found"})
     return {"ok": True}
+
+
+@router.post("/{room_id}/snapshots")
+async def create_snapshot(room_id: str = Path(min_length=1)) -> dict[str, int | bytes]:
+    try:
+        seq, _ = await room_registry.take_snapshot(room_id)
+        # Do not return bytes body in JSON response; return seq only
+        return {"seq": seq}
+    except KeyError:
+        raise HTTPException(status_code=404, detail={"message": "room not found"})
+
+
+@router.post("/{room_id}/versions/{tag}")
+async def create_version(
+    room_id: str = Path(min_length=1),
+    tag: str = Path(min_length=1),
+    payload: dict | None = Body(default=None)
+) -> dict[str, int]:
+    try:
+        target_seq = payload.get("seq") if isinstance(payload, dict) else None
+        seq = await room_registry.tag_version(room_id, tag, seq=target_seq)
+        return {"seq": seq}
+    except KeyError:
+        raise HTTPException(status_code=404, detail={"message": "room not found"})
+    except ValueError:
+        raise HTTPException(status_code=409, detail={"message": "version tag already exists"})
+
+
+@router.post("/{room_id}/versions/{tag}/revert")
+async def revert_version(room_id: str = Path(min_length=1), tag: str = Path(min_length=1)) -> dict[str, int]:
+    try:
+        seq, _ = await room_registry.revert_to_version(room_id, tag)
+        return {"seq": seq}
+    except KeyError:
+        raise HTTPException(status_code=404, detail={"message": "room or tag not found"})
 
 
