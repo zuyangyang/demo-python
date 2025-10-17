@@ -54,31 +54,31 @@ This document tracks the implementation progress phase-by-phase. Each step inclu
 
 ### Phase 2 — CRDT core, sequencing, snapshots
 
-- [ ] CRDT integration (y-py preferred)
+- [x] CRDT integration (y-py preferred)
   - Deliverables: per-room `crdt_doc`; binary WS frames for updates
   - Test plan
-    - Unit: apply CRDT update produces expected doc state; serialization/deserialization roundtrip stable.
-    - Integration: two clients exchange updates and converge to same state.
+    - [x] Unit: apply CRDT update produces expected doc state; serialization/deserialization roundtrip stable.
+    - [x] Integration: two clients exchange updates and converge to same state.
 
-- [ ] Event sequencing and replay
+- [x] Event sequencing and replay
   - Deliverables: `event_log` with monotonic `seq`; join with `lastSeq` to replay
   - Test plan
-    - Unit: concurrent updates under lock always increment `seq` by 1; no gaps.
-    - Integration: client disconnects after seq N, others continue; upon reconnect with `lastSeq=N`, client replays deltas and matches head state.
-    - Fault: corrupted update is rejected and logged; subsequent valid updates continue.
+    - [x] Unit: concurrent updates under lock always increment `seq` by 1; no gaps.
+    - [x] Integration: client disconnects after seq N, others continue; upon reconnect with `lastSeq=N`, client replays deltas and matches head state.
+    - [x] Fault: corrupted update is rejected and logged; subsequent valid updates continue.
 
-- [ ] Snapshots and pruning
+- [x] Snapshots and pruning
   - Deliverables: periodic/manual snapshots; keep last K; prune events before oldest snapshot
   - Test plan
-    - Unit: snapshot writes capture current doc hash; applying snapshot+tail equals live doc.
-    - Integration: heavy stream of updates triggers snapshot; old events pruned; memory usage decreases.
-    - Edge: revert to older version then resume editing preserves monotonic `seq` (no reuse).
+    - [x] Unit: snapshot writes capture current doc hash; applying snapshot+tail equals live doc.
+    - [x] Integration: heavy stream of updates triggers snapshot; old events pruned; memory usage decreases.
+    - [x] Edge: revert to older version then resume editing preserves monotonic `seq` (no reuse).
 
-- [ ] Versions and revert
+- [x] Versions and revert
   - Deliverables: tag → seq mapping; revert endpoint
   - Test plan
-    - Unit: creating version stores correct seq; duplicate tag rejected.
-    - Integration: revert to tag restores doc state (hash match) and broadcasts new head.
+    - [x] Unit: creating version stores correct seq; duplicate tag rejected.
+    - [x] Integration: revert to tag restores doc state (hash match) and broadcasts new head.
 
 ---
 
