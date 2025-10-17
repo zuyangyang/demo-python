@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import imghdr
+from io import BytesIO
 
 from fastapi import APIRouter, HTTPException, Path, UploadFile
 from fastapi.responses import Response
+from PIL import Image
 
 from app.services.room_registry import room_registry
 
@@ -11,7 +12,7 @@ from app.services.room_registry import room_registry
 router = APIRouter(prefix="/rooms")
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10MB
-ALLOWED_FORMATS = {"png", "jpeg", "jpg"}
+ALLOWED_FORMATS = {"PNG", "JPEG"}
 
 
 @router.post("/{room_id}/image")
@@ -30,12 +31,14 @@ async def upload_image(room_id: str = Path(min_length=1), file: UploadFile | Non
     if len(data) > MAX_IMAGE_BYTES:
         raise HTTPException(status_code=413, detail={"message": "file too large"})
 
-    # Validate type using imghdr and filename extension heuristics
-    kind = imghdr.what(None, h=data)
-    if kind == "rgb":  # imghdr quirk; treat as jpeg fallback
-        kind = "jpeg"
-    ext = (file.filename or "").split(".")[-1].lower() if file.filename else ""
-    if kind not in ALLOWED_FORMATS and ext not in ALLOWED_FORMATS:
+    # Validate type by decoding with Pillow; accept PNG or JPEG
+    try:
+        with Image.open(BytesIO(data)) as img:
+            img_format = (img.format or "").upper()
+    except Exception:
+        raise HTTPException(status_code=415, detail={"message": "unsupported image type"})
+
+    if img_format not in ALLOWED_FORMATS:
         raise HTTPException(status_code=415, detail={"message": "unsupported image type"})
 
     await room_registry.set_room_image(room_id, data)
@@ -50,9 +53,16 @@ async def get_image(room_id: str = Path(min_length=1)) -> Response:
     data = await room_registry.get_room_image(room_id)
     if not data:
         raise HTTPException(status_code=404, detail={"message": "image not found"})
-    # Best effort content type guess
-    kind = imghdr.what(None, h=data) or "octet-stream"
-    mime = "image/png" if kind == "png" else ("image/jpeg" if kind in {"jpeg", "jpg"} else "application/octet-stream")
+    # Best effort content type guess via Pillow
+    mime = "application/octet-stream"
+    try:
+        with Image.open(BytesIO(data)) as img:
+            if (img.format or "").upper() == "PNG":
+                mime = "image/png"
+            elif (img.format or "").upper() == "JPEG":
+                mime = "image/jpeg"
+    except Exception:
+        pass
     return Response(content=data, media_type=mime)
 
 

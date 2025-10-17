@@ -28,9 +28,12 @@ def test_rooms_crud_and_image_upload_and_get():
     resp = client.post("/api/v1/rooms/r1/image", files={"file": ("empty.png", b"")})
     assert resp.status_code == 400
 
-    # upload a tiny valid PNG header (minimal)
-    # PNG header + IHDR chunk stub (not a full image but imghdr recognizes from header)
-    minimal_png = b"\x89PNG\r\n\x1a\n" + b"rest"
+    # upload a small valid PNG generated via bytes; ensure Pillow can open it
+    # Use a real 1x1 PNG
+    minimal_png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+        b"\x00\x00\x00\x0cIDATx\x9cc``\x00\x00\x00\x02\x00\x01\xe2!\xbc3\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
     resp = client.post("/api/v1/rooms/r1/image", files={"file": ("img.png", minimal_png, "image/png")})
     assert resp.status_code == 200
     assert resp.json()["ok"] is True
