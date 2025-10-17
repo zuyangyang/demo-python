@@ -30,25 +30,25 @@ This document tracks the implementation progress phase-by-phase. Each step inclu
 
 ### Phase 1 — Rooms, images, and basic WebSocket
 
-- [ ] In-memory `RoomRegistry` and `RoomState`
+- [x] In-memory `RoomRegistry` and `RoomState`
   - Deliverables: create/get/list/delete rooms; `presence` map; `lock`
   - Test plan
-    - Unit: `RoomRegistry` create/delete semantics; duplicate id rejection; lock serialization smoke test.
-    - Integration: CRUD endpoints return expected payloads and status codes.
+    - [x] Unit: `RoomRegistry` create/delete semantics; duplicate id rejection; lock serialization smoke test.
+    - [x] Integration: CRUD endpoints return expected payloads and status codes.
 
-- [ ] Base image upload/retrieval
+- [x] Base image upload/retrieval
   - Deliverables: `POST /v1/rooms/{id}/image`, `GET /v1/rooms/{id}/image`
   - Test plan
-    - Unit: image validator (MIME and extension), max size enforcement, error messages.
-    - Integration: upload PNG/JPG, retrieve bytes; invalid type rejected; oversized image rejected.
-    - Edge: overwrite image for a room; retrieving before upload returns 404.
+    - [x] Unit: image validator (MIME and extension), max size enforcement, error messages.
+    - [x] Integration: upload PNG/JPG, retrieve bytes; invalid type rejected; oversized image rejected.
+    - [x] Edge: overwrite image for a room; retrieving before upload returns 404.
 
-- [ ] WebSocket presence echo
+- [x] WebSocket presence echo
   - Deliverables: `GET /v1/ws/rooms/{id}?userId=...`; broadcast presence/cursor JSON
   - Test plan
-    - Integration: two clients connect to same room; presence from A is received by B within 100ms median.
-    - Edge: send malformed presence → server responds with error message and keeps connection.
-    - Disconnect/reconnect: presence removed after TTL; reconnect restores presence.
+    - [x] Integration: two clients connect to same room; presence from A is received by B within 100ms median.
+    - [x] Edge: send malformed presence → server responds with error message and keeps connection.
+    - [x] Disconnect/reconnect: presence removed after TTL; reconnect restores presence.
 
 ---
 

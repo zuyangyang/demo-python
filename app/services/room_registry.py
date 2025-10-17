@@ -11,7 +11,7 @@ class Presence:
     user_id: str
     cursor: Optional[dict] = None
     selection: Optional[list[str]] = None
-    # last updated timestamp for TTL behavior if needed later
+    # last updated timestamp for TTL behavior
     updated_ts: float = field(default_factory=lambda: time.time())
 
 
@@ -24,6 +24,8 @@ class RoomState:
     connections: Set["WebSocketLike"] = field(default_factory=set)
     # Serialize updates within a room when needed
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    # TTL for presence cleanup (seconds)
+    presence_ttl: float = 30.0
 
 
 class WebSocketLike:
@@ -77,6 +79,37 @@ class RoomRegistry:
         if state is None:
             raise KeyError("room not found")
         return state
+
+    # Presence management
+    async def update_presence(self, room_id: str, user_id: str, presence_data: dict) -> None:
+        state = await self.get_or_throw(room_id)
+        async with state.lock:
+            state.presence_by_user[user_id] = Presence(
+                user_id=user_id,
+                cursor=presence_data.get("cursor"),
+                selection=presence_data.get("selection"),
+                updated_ts=time.time()
+            )
+
+    async def remove_presence(self, room_id: str, user_id: str) -> None:
+        state = await self.get_room(room_id)
+        if state:
+            async with state.lock:
+                state.presence_by_user.pop(user_id, None)
+
+    async def cleanup_expired_presence(self, room_id: str) -> None:
+        state = await self.get_room(room_id)
+        if not state:
+            return
+        
+        current_time = time.time()
+        async with state.lock:
+            expired_users = [
+                user_id for user_id, presence in state.presence_by_user.items()
+                if current_time - presence.updated_ts > state.presence_ttl
+            ]
+            for user_id in expired_users:
+                state.presence_by_user.pop(user_id, None)
 
 
 # Singleton registry for app lifetime
