@@ -35,7 +35,7 @@ app.add_middleware(
 # Add trusted host middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.example.com"]
+    allowed_hosts=["localhost", "127.0.0.1", "*.example.com", "testserver"]
 )
 
 # Add request timing middleware
@@ -67,7 +67,7 @@ async def api_exception_handler(request: Request, exc: APIException):
     logger.error(
         "API exception occurred",
         extra={
-            "message": exc.message,
+            "error_message": exc.message,
             "status_code": exc.status_code,
             "details": exc.details,
             "url": str(request.url)
@@ -90,7 +90,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     logger.error(
         "HTTP exception occurred",
         extra={
-            "message": exc.detail,
+            "error_message": exc.detail,
             "status_code": exc.status_code,
             "url": str(request.url)
         }
@@ -112,7 +112,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     logger.error(
         "Unexpected error occurred",
         extra={
-            "message": str(exc),
+            "error_message": str(exc),
             "type": type(exc).__name__,
             "url": str(request.url)
         },
@@ -152,8 +152,8 @@ async def root():
     }
 
 # Include API routers (will be added in later phases)
-# from app.api.v1.router import api_router
-# app.include_router(api_router, prefix="/api/v1")
+from app.api.v1.router import api_v1_router
+app.include_router(api_v1_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
