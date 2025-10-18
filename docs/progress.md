@@ -168,7 +168,7 @@ This document tracks the implementation progress of the Multi-User Task Assignme
 - [x] Create `app/api/v1/endpoints/auth.py` with auth router
 - [x] Implement `/auth/register` endpoint with proper validation
 - [x] Implement `/auth/login` endpoint with JWT token response
-- [ ] Add JWT token refresh endpoint
+- [x] Add JWT token refresh endpoint
 - [x] Configure proper HTTP status codes and error responses
 
 **Expected Outcome:** Working authentication API with proper error handling and validation
@@ -178,7 +178,7 @@ This document tracks the implementation progress of the Multi-User Task Assignme
 - [x] Test registration with duplicate usernames/emails
 - [x] Test user login endpoint with correct credentials
 - [x] Test login with incorrect credentials
-- [ ] Verify JWT token generation and refresh functionality
+- [x] Verify JWT token generation and refresh functionality
 
 ---
 

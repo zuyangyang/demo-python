@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, UserUpdate
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token, verify_token
 from app.core.config import settings
 from app.services.base import BaseService
 from typing import Optional, List
@@ -95,3 +95,25 @@ class UserService(BaseService):
         }
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
         return create_access_token(data=token_data, expires_delta=access_token_expires)
+
+    def create_refresh_token(self, user: User) -> str:
+        """Create a refresh token for a user."""
+        token_data = {
+            "sub": user.username,
+            "user_id": user.id
+        }
+        refresh_token_expires = timedelta(days=7)  # Refresh token valid for 7 days
+        return create_refresh_token(data=token_data, expires_delta=refresh_token_expires)
+
+    def refresh_access_token(self, refresh_token: str) -> Optional[str]:
+        """Create a new access token using a refresh token."""
+        payload = verify_token(refresh_token)
+        if not payload or payload.get("type") != "refresh":
+            return None
+
+        user_id = payload.get("user_id")
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return None
+
+        return self.create_access_token(user)

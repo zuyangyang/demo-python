@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from app.api.dependencies import get_database
 from app.schemas.user import UserCreate, Token
 from app.services.user_service import UserService
+from app.core.security import verify_token
+
+class RefreshTokenRequest(BaseModel):
+    """Schema for refresh token request."""
+    refresh_token: str
 
 router = APIRouter()
 
@@ -29,10 +35,11 @@ async def register_user(user_create: UserCreate, db: Session = Depends(get_datab
     # Create the user
     user = user_service.create_user(user_create)
 
-    # Create access token
+    # Create access and refresh tokens
     access_token = user_service.create_access_token(user)
+    refresh_token = user_service.create_refresh_token(user)
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
 
 @router.post("/login", response_model=Token)
 async def login_user(form_data: UserCreate, db: Session = Depends(get_database)):
@@ -48,7 +55,26 @@ async def login_user(form_data: UserCreate, db: Session = Depends(get_database))
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create access token
+    # Create access and refresh tokens
     access_token = user_service.create_access_token(user)
+    refresh_token = user_service.create_refresh_token(user)
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_database)):
+    """Refresh access token using refresh token."""
+    user_service = UserService(db)
+
+    # Create new access token using refresh token
+    new_access_token = user_service.refresh_access_token(request.refresh_token)
+    if not new_access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # We don't create a new refresh token here - the client should keep using the same one
+    # until it expires, at which point they need to re-authenticate
+    return {"access_token": new_access_token, "token_type": "bearer"}
