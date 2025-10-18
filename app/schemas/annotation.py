@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AnnotationType(str, Enum):
@@ -185,6 +185,26 @@ class AnnotationCreateRequest(BaseModel):
         """Ensure text content is provided for text annotations."""
         if hasattr(info, 'data') and info.data.get('type') == AnnotationType.TEXT and not v:
             raise ValueError('Text content is required for text annotations')
+        return v
+    
+    @field_validator('geometry', mode='before')
+    @classmethod
+    def convert_geometry_type(cls, v, info):
+        """Convert geometry dict to appropriate geometry type based on annotation type."""
+        if isinstance(v, dict) and hasattr(info, 'data'):
+            annotation_type = info.data.get('type')
+            if annotation_type == AnnotationType.TEXT:
+                return TextGeometry(**v)
+            elif annotation_type == AnnotationType.LINE:
+                return LineGeometry(**v)
+            elif annotation_type == AnnotationType.RECTANGLE:
+                return RectangleGeometry(**v)
+            elif annotation_type == AnnotationType.ELLIPSE:
+                return EllipseGeometry(**v)
+            elif annotation_type == AnnotationType.POLYGON:
+                return PolygonGeometry(**v)
+            elif annotation_type == AnnotationType.FREEHAND:
+                return FreehandGeometry(**v)
         return v
 
 

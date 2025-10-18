@@ -13,8 +13,9 @@ class TestCommentEndpoints:
     @pytest.fixture
     def room_id(self):
         """Create a test room and return its ID."""
-        response = client.post("/v1/rooms", json={"room_id": "test_room_comments"})
-        assert response.status_code == 200
+        response = client.post("/api/v1/rooms", json={"room_id": "test_room_comments"})
+        # Accept both 200 (created) and 409 (already exists) as success
+        assert response.status_code in [200, 409]
         return "test_room_comments"
 
     @pytest.fixture
@@ -49,7 +50,7 @@ class TestCommentEndpoints:
     ):
         """Test creating a comment thread anchored to an annotation."""
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -79,7 +80,7 @@ class TestCommentEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_data,
             params={"user_id": "user1"}
         )
@@ -99,7 +100,7 @@ class TestCommentEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=invalid_data,
             params={"user_id": "user1"}
         )
@@ -114,7 +115,7 @@ class TestCommentEndpoints:
         }
         
         response = client.post(
-            "/v1/rooms/nonexistent/comments/threads",
+            "/api/v1/rooms/nonexistent/comments/threads",
             json=thread_data,
             params={"user_id": "user1"}
         )
@@ -126,13 +127,13 @@ class TestCommentEndpoints:
         """Test listing comment threads."""
         # Create a thread first
         client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
         
         # List threads
-        response = client.get(f"/v1/rooms/{room_id}/comments/threads")
+        response = client.get(f"/api/v1/rooms/{room_id}/comments/threads")
         
         assert response.status_code == 200
         data = response.json()
@@ -145,14 +146,14 @@ class TestCommentEndpoints:
         """Test listing comment threads with filters."""
         # Create a thread first
         client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
         
         # List threads with filters
         response = client.get(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             params={
                 "include_resolved": False,
                 "limit": 50,
@@ -168,7 +169,7 @@ class TestCommentEndpoints:
         """Test getting a specific comment thread."""
         # Create a thread first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -176,7 +177,7 @@ class TestCommentEndpoints:
         thread_id = create_response.json()["thread"]["id"]
         
         # Get the thread
-        response = client.get(f"/v1/rooms/{room_id}/comments/threads/{thread_id}")
+        response = client.get(f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}")
         
         assert response.status_code == 200
         data = response.json()
@@ -185,7 +186,7 @@ class TestCommentEndpoints:
 
     def test_get_comment_thread_not_found(self, room_id):
         """Test getting non-existent comment thread."""
-        response = client.get(f"/v1/rooms/{room_id}/comments/threads/nonexistent")
+        response = client.get(f"/api/v1/rooms/{room_id}/comments/threads/nonexistent")
         
         assert response.status_code == 404
         assert "Comment thread not found" in response.json()["detail"]
@@ -194,7 +195,7 @@ class TestCommentEndpoints:
         """Test updating comment thread status."""
         # Create a thread first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -205,7 +206,7 @@ class TestCommentEndpoints:
         update_data = {"status": "resolved"}
         
         response = client.patch(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}",
             json=update_data,
             params={"user_id": "user1"}
         )
@@ -218,7 +219,7 @@ class TestCommentEndpoints:
         """Test updating comment thread visibility."""
         # Create a thread first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -229,7 +230,7 @@ class TestCommentEndpoints:
         update_data = {"visible": False}
         
         response = client.patch(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}",
             json=update_data,
             params={"user_id": "user1"}
         )
@@ -242,7 +243,7 @@ class TestCommentEndpoints:
         """Test deleting a comment thread."""
         # Create a thread first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -251,7 +252,7 @@ class TestCommentEndpoints:
         
         # Delete the thread
         response = client.delete(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}",
             params={"user_id": "user1"}
         )
         
@@ -263,7 +264,7 @@ class TestCommentEndpoints:
         """Test adding a comment to an existing thread."""
         # Create a thread first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -272,7 +273,7 @@ class TestCommentEndpoints:
         
         # Add comment to thread
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
             json=comment_create_data,
             params={"user_id": "user2"}
         )
@@ -289,7 +290,7 @@ class TestCommentEndpoints:
         """Test adding a comment without parent ID."""
         # Create a thread first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -303,7 +304,7 @@ class TestCommentEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
             json=comment_data,
             params={"user_id": "user2"}
         )
@@ -316,7 +317,7 @@ class TestCommentEndpoints:
         """Test updating a comment."""
         # Create a thread and comment first
         thread_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -324,7 +325,7 @@ class TestCommentEndpoints:
         thread_id = thread_response.json()["thread"]["id"]
         
         comment_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
             json=comment_create_data,
             params={"user_id": "user2"}
         )
@@ -335,7 +336,7 @@ class TestCommentEndpoints:
         update_data = {"content": "Updated comment content"}
         
         response = client.patch(
-            f"/v1/rooms/{room_id}/comments/{comment_id}",
+            f"/api/v1/rooms/{room_id}/comments/{comment_id}",
             json=update_data,
             params={"user_id": "user2"}
         )
@@ -349,7 +350,7 @@ class TestCommentEndpoints:
         """Test deleting a comment."""
         # Create a thread and comment first
         thread_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -357,7 +358,7 @@ class TestCommentEndpoints:
         thread_id = thread_response.json()["thread"]["id"]
         
         comment_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}/comments",
             json=comment_create_data,
             params={"user_id": "user2"}
         )
@@ -366,7 +367,7 @@ class TestCommentEndpoints:
         
         # Delete the comment
         response = client.delete(
-            f"/v1/rooms/{room_id}/comments/{comment_id}",
+            f"/api/v1/rooms/{room_id}/comments/{comment_id}",
             params={"user_id": "user2"}
         )
         
@@ -378,14 +379,14 @@ class TestCommentEndpoints:
         """Test getting comments for a specific annotation."""
         # Create a thread anchored to an annotation
         client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
         
         # Get comments for the annotation
         response = client.get(
-            f"/v1/rooms/{room_id}/annotations/annotation1/comments"
+            f"/api/v1/rooms/{room_id}/annotations/annotation1/comments"
         )
         
         assert response.status_code == 200
@@ -398,14 +399,14 @@ class TestCommentEndpoints:
         """Test getting comments for annotation with filters."""
         # Create a thread anchored to an annotation
         client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
         
         # Get comments with filters
         response = client.get(
-            f"/v1/rooms/{room_id}/annotations/annotation1/comments",
+            f"/api/v1/rooms/{room_id}/annotations/annotation1/comments",
             params={"include_resolved": False}
         )
         
@@ -416,7 +417,7 @@ class TestCommentEndpoints:
     def test_create_comment_thread_missing_user_id(self, room_id, thread_create_data):
         """Test creating comment thread without user_id parameter."""
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data
         )
         
@@ -430,7 +431,7 @@ class TestCommentEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_data,
             params={"user_id": "user1"}
         )
@@ -449,7 +450,7 @@ class TestCommentEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=invalid_data,
             params={"user_id": "user1"}
         )
@@ -460,7 +461,7 @@ class TestCommentEndpoints:
         """Test comment thread status transitions."""
         # Create a thread
         create_response = client.post(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             json=thread_create_data,
             params={"user_id": "user1"}
         )
@@ -469,7 +470,7 @@ class TestCommentEndpoints:
         
         # Resolve the thread
         resolve_response = client.patch(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}",
             json={"status": "resolved"},
             params={"user_id": "user1"}
         )
@@ -479,7 +480,7 @@ class TestCommentEndpoints:
         
         # Reopen the thread
         reopen_response = client.patch(
-            f"/v1/rooms/{room_id}/comments/threads/{thread_id}",
+            f"/api/v1/rooms/{room_id}/comments/threads/{thread_id}",
             json={"status": "open"},
             params={"user_id": "user1"}
         )
@@ -494,14 +495,14 @@ class TestCommentEndpoints:
             thread_data = thread_create_data.copy()
             thread_data["initial_comment"] = f"Thread {i}"
             client.post(
-                f"/v1/rooms/{room_id}/comments/threads",
+                f"/api/v1/rooms/{room_id}/comments/threads",
                 json=thread_data,
                 params={"user_id": f"user{i}"}
             )
         
         # Test pagination
         response = client.get(
-            f"/v1/rooms/{room_id}/comments/threads",
+            f"/api/v1/rooms/{room_id}/comments/threads",
             params={"limit": 2, "offset": 1}
         )
         

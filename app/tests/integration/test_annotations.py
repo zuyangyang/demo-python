@@ -29,8 +29,9 @@ class TestAnnotationEndpoints:
     @pytest.fixture
     def room_id(self):
         """Create a test room and return its ID."""
-        response = client.post("/v1/rooms", json={"room_id": "test_room_annotations"})
-        assert response.status_code == 200
+        response = client.post("/api/v1/rooms", json={"room_id": "test_room_annotations"})
+        # Accept both 200 (created) and 409 (already exists) as success
+        assert response.status_code in [200, 409]
         return "test_room_annotations"
 
     @pytest.fixture
@@ -86,7 +87,7 @@ class TestAnnotationEndpoints:
     def test_create_text_annotation(self, room_id, text_annotation_data):
         """Test creating a text annotation."""
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
@@ -108,7 +109,7 @@ class TestAnnotationEndpoints:
     def test_create_line_annotation(self, room_id, line_annotation_data):
         """Test creating a line annotation."""
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=line_annotation_data,
             params={"user_id": "user1"}
         )
@@ -126,7 +127,7 @@ class TestAnnotationEndpoints:
     def test_create_rectangle_annotation(self, room_id, rectangle_annotation_data):
         """Test creating a rectangle annotation."""
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=rectangle_annotation_data,
             params={"user_id": "user1"}
         )
@@ -157,7 +158,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=ellipse_data,
             params={"user_id": "user1"}
         )
@@ -189,7 +190,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=polygon_data,
             params={"user_id": "user1"}
         )
@@ -220,7 +221,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=freehand_data,
             params={"user_id": "user1"}
         )
@@ -247,7 +248,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=annotation_data,
             params={"user_id": "user1"}
         )
@@ -270,7 +271,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=annotation_data,
             params={"user_id": "user1"}
         )
@@ -289,7 +290,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=invalid_data,
             params={"user_id": "user1"}
         )
@@ -305,7 +306,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            "/v1/rooms/nonexistent/annotations",
+            "/api/v1/rooms/nonexistent/annotations",
             json=annotation_data,
             params={"user_id": "user1"}
         )
@@ -317,13 +318,13 @@ class TestAnnotationEndpoints:
         """Test listing annotations."""
         # Create an annotation first
         client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
         
         # List annotations
-        response = client.get(f"/v1/rooms/{room_id}/annotations")
+        response = client.get(f"/api/v1/rooms/{room_id}/annotations")
         
         assert response.status_code == 200
         data = response.json()
@@ -336,14 +337,14 @@ class TestAnnotationEndpoints:
         """Test listing annotations with filters."""
         # Create an annotation first
         client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
         
         # List annotations with include_deleted filter
         response = client.get(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             params={"include_deleted": True}
         )
         
@@ -355,7 +356,7 @@ class TestAnnotationEndpoints:
         """Test getting a specific annotation."""
         # Create an annotation first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
@@ -363,7 +364,7 @@ class TestAnnotationEndpoints:
         annotation_id = create_response.json()["annotation"]["id"]
         
         # Get the annotation
-        response = client.get(f"/v1/rooms/{room_id}/annotations/{annotation_id}")
+        response = client.get(f"/api/v1/rooms/{room_id}/annotations/{annotation_id}")
         
         assert response.status_code == 200
         data = response.json()
@@ -372,7 +373,7 @@ class TestAnnotationEndpoints:
 
     def test_get_annotation_not_found(self, room_id):
         """Test getting non-existent annotation."""
-        response = client.get(f"/v1/rooms/{room_id}/annotations/nonexistent")
+        response = client.get(f"/api/v1/rooms/{room_id}/annotations/nonexistent")
         
         assert response.status_code == 404
         assert "Annotation not found" in response.json()["detail"]
@@ -381,7 +382,7 @@ class TestAnnotationEndpoints:
         """Test updating an annotation."""
         # Create an annotation first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
@@ -396,7 +397,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.patch(
-            f"/v1/rooms/{room_id}/annotations/{annotation_id}",
+            f"/api/v1/rooms/{room_id}/annotations/{annotation_id}",
             json=update_data,
             params={"user_id": "user1"}
         )
@@ -411,7 +412,7 @@ class TestAnnotationEndpoints:
         """Test deleting an annotation."""
         # Create an annotation first
         create_response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
@@ -420,7 +421,7 @@ class TestAnnotationEndpoints:
         
         # Delete the annotation
         response = client.delete(
-            f"/v1/rooms/{room_id}/annotations/{annotation_id}",
+            f"/api/v1/rooms/{room_id}/annotations/{annotation_id}",
             params={"user_id": "user1"}
         )
         
@@ -432,7 +433,7 @@ class TestAnnotationEndpoints:
         """Test grouping annotations."""
         # Create two annotations first
         ann1_response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data,
             params={"user_id": "user1"}
         )
@@ -440,7 +441,7 @@ class TestAnnotationEndpoints:
         ann2_data = text_annotation_data.copy()
         ann2_data["geometry"] = {"x": 200, "y": 300}
         ann2_response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=ann2_data,
             params={"user_id": "user1"}
         )
@@ -455,7 +456,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations/group",
+            f"/api/v1/rooms/{room_id}/annotations/group",
             json=group_data,
             params={"user_id": "user1"}
         )
@@ -470,7 +471,7 @@ class TestAnnotationEndpoints:
         ungroup_data = {"group_id": "group1"}
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations/ungroup",
+            f"/api/v1/rooms/{room_id}/annotations/ungroup",
             json=ungroup_data,
             params={"user_id": "user1"}
         )
@@ -483,7 +484,7 @@ class TestAnnotationEndpoints:
     def test_create_annotation_missing_user_id(self, room_id, text_annotation_data):
         """Test creating annotation without user_id parameter."""
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=text_annotation_data
         )
         
@@ -502,7 +503,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=invalid_data,
             params={"user_id": "user1"}
         )
@@ -521,7 +522,7 @@ class TestAnnotationEndpoints:
         }
         
         response = client.post(
-            f"/v1/rooms/{room_id}/annotations",
+            f"/api/v1/rooms/{room_id}/annotations",
             json=invalid_data,
             params={"user_id": "user1"}
         )
