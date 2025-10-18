@@ -1,0 +1,233 @@
+---
+description: Guidelines for creating and managing Product Requirements Documents (PRDs) in our project
+globs: ["prds/**/*.md", "docs/prds/**/*.md"]
+alwaysApply: false
+---
+
+# PRD (Product Requirements Document) Guidelines
+
+## Overview
+This rule provides comprehensive guidelines for creating, structuring, and managing Product Requirements Document (PRD) in our Python RESTful backend service project. The PRD should follow standardized templates and best practices to ensure consistency, clarity, and effective communication across the development team.
+
+## PRD Template Structure
+
+### Standard PRD Sections
+
+#### 1. Document Header
+```markdown
+# [Feature/API/Enhancement] Name
+
+**Document Version:** 1.0  
+**Created:** YYYY-MM-DD  
+**Last Updated:** YYYY-MM-DD  
+**Author:** [Name]  
+**Reviewers:** [Name1, Name2]  
+**Status:** Draft | In Review | Approved | In Progress | Completed  
+**Priority:** Low | Medium | High | Critical  
+```
+
+#### 2. Executive Summary
+- Brief 2-3 sentence overview
+- Key business value proposition
+- Success metrics
+
+#### 3. Problem Statement
+- Current state description
+- Pain points and limitations
+- Business impact
+- User complaints or requests
+
+#### 4. Goals and Objectives
+- Primary objectives
+- Success criteria
+- Key performance indicators (KPIs)
+- Business metrics
+
+#### 5. User Stories and Use Cases
+```markdown
+## User Stories
+
+### As a [user type]
+I want [functionality]
+So that [benefit/value]
+
+### Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+```
+
+#### 6. Functional Requirements
+- Detailed feature specifications
+- API endpoints (if applicable)
+- Data models and schemas
+- Business logic requirements
+- Integration requirements
+
+#### 7. Non-Functional Requirements
+- Performance requirements
+- Security requirements
+- Scalability requirements
+- Availability requirements
+- Compliance requirements
+
+#### 8. Technical Design
+- Architecture overview
+- Database changes
+- API design
+- External dependencies
+- Technology stack considerations
+
+#### 9. Implementation Plan
+- Development phases
+- Timeline and milestones
+- Resource requirements
+- Risk assessment
+- Dependencies
+
+#### 10. Testing Strategy
+- Unit testing requirements
+- Integration testing
+- End-to-end testing
+- Performance testing
+- Security testing
+
+#### 11. Deployment and Rollout
+- Deployment strategy
+- Rollout plan
+- Monitoring and alerting
+- Rollback procedures
+
+#### 12. Success Metrics
+- How success will be measured
+- Monitoring and analytics
+- Reporting requirements
+
+## PRD Types and Specializations
+
+### Feature PRD Template
+Use for new product features:
+- Focus on user experience
+- Include user journey mapping
+- Detail UI/UX requirements
+- Specify frontend and backend needs
+
+### API PRD Template
+Use for API development:
+- Detailed endpoint specifications
+- Request/response schemas
+- Authentication and authorization
+- Rate limiting and quotas
+- Error handling standards
+
+### Enhancement PRD Template
+Use for improving existing features:
+- Current state analysis
+- Improvement rationale
+- Backward compatibility considerations
+- Migration strategy
+
+## PRD Writing Best Practices
+
+### Content Guidelines
+1. **Clarity**: Use clear, concise language
+2. **Specificity**: Include specific requirements, not vague descriptions
+3. **Measurability**: Define measurable success criteria
+4. **Completeness**: Cover all aspects from user needs to technical implementation
+5. **Traceability**: Link requirements to business objectives
+
+### Technical Integration
+- Reference existing code patterns and architecture
+- Include relevant code examples where helpful
+- Specify database schema changes
+- Detail API endpoint specifications
+- Consider FastAPI/Pydantic integration patterns
+
+### Review Process
+1. **Draft**: Initial creation and internal review
+2. **Technical Review**: Engineering team review
+3. **Stakeholder Review**: Product and business team review
+4. **Approval**: Final sign-off before development
+5. **Implementation**: Active development phase
+6. **Completion**: Archive when feature is live
+
+## Integration with Development Workflow
+
+### PRD to Code Mapping
+- Link PRDs to GitHub issues/PRs
+- Reference PRD sections in commit messages
+- Update PRD status during development
+- Archive completed PRDs
+
+### Version Control
+- Track PRD changes in git
+- Use meaningful commit messages
+- Tag major PRD versions
+- Maintain change log
+
+## Quality Checklist
+
+### Before Submitting PRD
+- [ ] All required sections completed
+- [ ] Clear problem statement and solution
+- [ ] Specific, measurable requirements
+- [ ] Technical feasibility confirmed
+- [ ] Resource requirements estimated
+- [ ] Risk assessment completed
+- [ ] Success metrics defined
+- [ ] Reviewers assigned
+
+### During Development
+- [ ] PRD status updated regularly
+- [ ] Requirements traceability maintained
+- [ ] Changes documented and approved
+- [ ] Stakeholders informed of progress
+
+## Examples and References
+
+### Good PRD Examples
+- Clear problem statement with metrics
+- Specific user stories with acceptance criteria
+- Detailed technical requirements
+- Comprehensive testing strategy
+- Clear success metrics
+
+### Anti-Patterns to Avoid
+- Vague requirements without specifics
+- Missing technical details
+- No clear success criteria
+- Unrealistic timelines
+- Missing risk assessment
+- Poor stakeholder communication
+
+## Tools and Resources
+
+### Recommended Tools
+- Markdown for PRD writing
+- GitHub for version control and collaboration
+- Diagrams.net for architecture diagrams
+- Postman for API documentation
+- Notion/Confluence for team collaboration
+
+### Templates Location
+- Master templates: `docs/prds/templates/`
+- Reference implementations: `docs/prds/examples/`
+- Best practices guide: `docs/prds/guidelines.md`
+
+## Maintenance and Updates
+
+### Regular Reviews
+- Monthly PRD status reviews
+- Quarterly template updates
+- Annual process improvements
+- Continuous feedback integration
+
+### Process Evolution
+- Gather team feedback regularly
+- Update templates based on learnings
+- Refine review process
+- Improve integration with development workflow
+
+---
+
+**Note**: This rule should be referenced when creating any PRD in the project. Always use the appropriate template and follow the established naming conventions and review processes.
