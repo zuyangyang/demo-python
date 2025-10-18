@@ -84,23 +84,23 @@ This document tracks the implementation progress phase-by-phase. Each step inclu
 
 ### Phase 3 — Annotation primitives and comments
 
-- [ ] Annotation schema and operations
+- [x] Annotation schema and operations
   - Deliverables: types (text, line, rect, ellipse, polygon, freehand) with geometry, transforms, styles, z-order
   - Test plan
-    - Unit: schema validation for each type; invalid fields rejected with clear errors.
-    - Integration: create/update/delete flows via CRDT; concurrent edits on same object converge.
-    - Conflict: style and transform changes from two clients merge without data loss.
+    - [x] Unit: schema validation for each type; invalid fields rejected with clear errors.
+    - [x] Integration: create/update/delete flows via CRDT; concurrent edits on same object converge.
+    - [x] Conflict: style and transform changes from two clients merge without data loss.
 
-- [ ] Comment threads
+- [x] Comment threads
   - Deliverables: threads with `anchor: annotationId | coordinate`, `status: open|resolved`
   - Test plan
-    - Unit: create/resolve/reopen state machine; invalid transitions rejected.
-    - Integration: comments visible across clients; resolved threads hidden if filtered.
+    - [x] Unit: create/resolve/reopen state machine; invalid transitions rejected.
+    - [x] Integration: comments visible across clients; resolved threads hidden if filtered.
 
-- [ ] Read APIs (optional materialized view)
+- [x] Read APIs (optional materialized view)
   - Deliverables: REST read endpoints to fetch current annotations/comments snapshot
   - Test plan
-    - Integration: REST read equals CRDT-derived state; after updates, read reflects latest within bounded delay.
+    - [x] Integration: REST read equals CRDT-derived state; after updates, read reflects latest within bounded delay.
 
 ---
 
