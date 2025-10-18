@@ -2,7 +2,7 @@ import pytest
 import time
 from unittest.mock import AsyncMock, patch
 
-from app.services.comment_service import comment_service
+from app.services.comment_service import CommentService
 from app.schemas.comment import (
     CommentCreateRequest,
     CommentUpdateRequest,
@@ -17,12 +17,20 @@ class TestCommentService:
     """Test cases for CommentService."""
 
     @pytest.fixture
-    def mock_room_registry(self):
-        """Mock room registry for testing."""
-        with patch('app.services.comment_service.room_registry') as mock:
-            mock.append_update = AsyncMock(return_value=1)
-            mock.get_room = AsyncMock(return_value=AsyncMock(next_seq=2))
-            yield mock
+    def comment_service(self):
+        """Create comment service with mocked dependencies."""
+        service = CommentService()
+        
+        # Mock the room registry
+        mock_room_state = AsyncMock()
+        mock_room_state.next_seq = 2
+        
+        service.room_registry = AsyncMock()
+        service.room_registry.append_update = AsyncMock(return_value=1)
+        service.room_registry.get_room = AsyncMock(return_value=mock_room_state)
+        service.room_registry.get_or_throw = AsyncMock(return_value=mock_room_state)
+        
+        return service
 
     @pytest.fixture
     def annotation_anchor(self):
@@ -53,7 +61,7 @@ class TestCommentService:
 
     @pytest.mark.asyncio
     async def test_create_comment_thread_with_annotation_anchor(
-        self, mock_room_registry, thread_create_request
+        self, comment_service, thread_create_request
     ):
         """Test creating a comment thread anchored to an annotation."""
         thread, seq = await comment_service.create_comment_thread(
@@ -71,11 +79,11 @@ class TestCommentService:
         assert thread.visible is True
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
+        comment_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_comment_thread_with_coordinate_anchor(
-        self, mock_room_registry, coordinate_anchor
+        self, comment_service, coordinate_anchor
     ):
         """Test creating a comment thread anchored to coordinates."""
         request = CommentThreadCreateRequest(
@@ -92,7 +100,7 @@ class TestCommentService:
         assert thread.comments[0].content == "Comment at coordinates"
 
     @pytest.mark.asyncio
-    async def test_add_comment_to_thread(self, mock_room_registry, comment_create_request):
+    async def test_add_comment_to_thread(self, comment_service, comment_create_request):
         """Test adding a comment to an existing thread."""
         comment, thread, seq = await comment_service.add_comment_to_thread(
             "room1", "thread1", "user1", comment_create_request
@@ -104,10 +112,10 @@ class TestCommentService:
         assert comment.thread_id == "thread1"
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
+        comment_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_comment(self, mock_room_registry):
+    async def test_update_comment(self, comment_service):
         """Test updating a comment."""
         update_request = CommentUpdateRequest(content="Updated comment content")
         
@@ -119,10 +127,10 @@ class TestCommentService:
         assert comment.edited is True
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
+        comment_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_comment_thread_status(self, mock_room_registry):
+    async def test_update_comment_thread_status(self, comment_service):
         """Test updating comment thread status."""
         update_request = CommentThreadUpdateRequest(status=CommentStatus.RESOLVED)
         
@@ -133,10 +141,10 @@ class TestCommentService:
         assert thread.status == CommentStatus.RESOLVED
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
+        comment_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_comment_thread_visibility(self, mock_room_registry):
+    async def test_update_comment_thread_visibility(self, comment_service):
         """Test updating comment thread visibility."""
         update_request = CommentThreadUpdateRequest(visible=False)
         
@@ -148,7 +156,7 @@ class TestCommentService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_resolve_comment_thread_sets_timestamps(self, mock_room_registry):
+    async def test_resolve_comment_thread_sets_timestamps(self, comment_service):
         """Test that resolving a thread sets resolution timestamps."""
         with patch('time.time', return_value=1234567890.0):
             update_request = CommentThreadUpdateRequest(status=CommentStatus.RESOLVED)
@@ -161,7 +169,7 @@ class TestCommentService:
             assert thread.resolved_by == "user1"
 
     @pytest.mark.asyncio
-    async def test_reopen_comment_thread_clears_timestamps(self, mock_room_registry):
+    async def test_reopen_comment_thread_clears_timestamps(self, comment_service):
         """Test that reopening a thread clears resolution timestamps."""
         update_request = CommentThreadUpdateRequest(status=CommentStatus.OPEN)
         
@@ -173,7 +181,7 @@ class TestCommentService:
         assert thread.resolved_by is None
 
     @pytest.mark.asyncio
-    async def test_delete_comment(self, mock_room_registry):
+    async def test_delete_comment(self, comment_service):
         """Test deleting a comment."""
         deleted_id, thread_id, seq = await comment_service.delete_comment(
             "room1", "comment1", "user1"
@@ -183,10 +191,10 @@ class TestCommentService:
         assert thread_id == "placeholder"  # Mock value
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
+        comment_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_comment_thread(self, mock_room_registry):
+    async def test_delete_comment_thread(self, comment_service):
         """Test deleting a comment thread."""
         deleted_thread_id, seq = await comment_service.delete_comment_thread(
             "room1", "thread1", "user1"
@@ -195,10 +203,10 @@ class TestCommentService:
         assert deleted_thread_id == "thread1"
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
+        comment_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_comment_threads(self, mock_room_registry):
+    async def test_get_comment_threads(self, comment_service):
         """Test getting comment threads for a room."""
         threads, seq = await comment_service.get_comment_threads("room1")
         
@@ -206,7 +214,7 @@ class TestCommentService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_get_comment_threads_include_resolved(self, mock_room_registry):
+    async def test_get_comment_threads_include_resolved(self, comment_service):
         """Test getting comment threads with resolved filter."""
         threads, seq = await comment_service.get_comment_threads("room1", include_resolved=False)
         
@@ -214,7 +222,7 @@ class TestCommentService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_get_comments_for_annotation(self, mock_room_registry):
+    async def test_get_comments_for_annotation(self, comment_service):
         """Test getting comments for a specific annotation."""
         threads, seq = await comment_service.get_comments_for_annotation(
             "room1", "annotation1"
@@ -224,9 +232,9 @@ class TestCommentService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_create_comment_thread_room_not_found(self, mock_room_registry):
+    async def test_create_comment_thread_room_not_found(self, comment_service):
         """Test creating comment thread when room doesn't exist."""
-        mock_room_registry.append_update.side_effect = KeyError("room not found")
+        comment_service.room_registry.append_update.side_effect = KeyError("room not found")
         
         request = CommentThreadCreateRequest(
             anchor=CommentAnchor(coordinate={"x": 0, "y": 0}),
@@ -237,7 +245,7 @@ class TestCommentService:
             await comment_service.create_comment_thread("nonexistent", "user1", request)
 
     @pytest.mark.asyncio
-    async def test_comment_thread_timestamps(self, mock_room_registry, thread_create_request):
+    async def test_comment_thread_timestamps(self, comment_service, thread_create_request):
         """Test that comment threads have proper timestamps."""
         with patch('time.time', return_value=1234567890.0):
             thread, seq = await comment_service.create_comment_thread(
@@ -250,7 +258,7 @@ class TestCommentService:
             assert thread.updated_by == "user1"
 
     @pytest.mark.asyncio
-    async def test_comment_timestamps(self, mock_room_registry, comment_create_request):
+    async def test_comment_timestamps(self, comment_service, comment_create_request):
         """Test that comments have proper timestamps."""
         with patch('time.time', return_value=1234567890.0):
             comment, thread, seq = await comment_service.add_comment_to_thread(
@@ -262,7 +270,7 @@ class TestCommentService:
             assert comment.author_id == "user1"
 
     @pytest.mark.asyncio
-    async def test_comment_edit_tracking(self, mock_room_registry):
+    async def test_comment_edit_tracking(self, comment_service):
         """Test that comment edits are tracked."""
         update_request = CommentUpdateRequest(content="Updated content")
         
@@ -273,7 +281,7 @@ class TestCommentService:
         assert comment.edited is True
 
     @pytest.mark.asyncio
-    async def test_comment_thread_initial_comment(self, mock_room_registry, thread_create_request):
+    async def test_comment_thread_initial_comment(self, comment_service, thread_create_request):
         """Test that initial comment is properly created with thread."""
         thread, seq = await comment_service.create_comment_thread(
             "room1", "user1", thread_create_request
@@ -287,7 +295,7 @@ class TestCommentService:
         assert initial_comment.parent_id is None
 
     @pytest.mark.asyncio
-    async def test_comment_with_parent(self, mock_room_registry, comment_create_request):
+    async def test_comment_with_parent(self, comment_service, comment_create_request):
         """Test creating a comment with a parent comment."""
         comment, thread, seq = await comment_service.add_comment_to_thread(
             "room1", "thread1", "user1", comment_create_request
@@ -310,14 +318,14 @@ class TestCommentService:
             CommentAnchor(annotation_id="ann1", coordinate={"x": 100, "y": 200})
         
         # Test neither annotation_id nor coordinate provided
-        with pytest.raises(ValueError, match="Cannot specify both annotation_id and coordinate"):
+        with pytest.raises(ValueError, match="Must specify either annotation_id or coordinate"):
             CommentAnchor()  # Neither provided
 
     @pytest.mark.asyncio
     async def test_comment_content_validation(self):
         """Test comment content validation."""
         # Test empty content
-        with pytest.raises(ValueError, match="ensure this value has at least 1 characters"):
+        with pytest.raises(ValueError, match="String should have at least 1 character"):
             CommentCreateRequest(
                 content="",
                 anchor=CommentAnchor(coordinate={"x": 0, "y": 0})

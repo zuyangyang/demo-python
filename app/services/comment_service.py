@@ -140,6 +140,11 @@ class CommentService:
         comment = self._create_placeholder_comment(comment_id, user_id, current_time)
         thread = self._create_placeholder_thread("placeholder", room_id, user_id, current_time)
         
+        # Apply updates to the placeholder comment
+        for key, value in update_data.items():
+            if hasattr(comment, key):
+                setattr(comment, key, value)
+        
         return comment, thread, seq
 
     async def update_comment_thread(
@@ -178,6 +183,11 @@ class CommentService:
         
         # In a real implementation, we'd reconstruct the thread from CRDT state
         thread = self._create_placeholder_thread(thread_id, room_id, user_id, current_time)
+        
+        # Apply updates to the placeholder thread
+        for key, value in update_data.items():
+            if hasattr(thread, key):
+                setattr(thread, key, value)
         
         return thread, seq
 

@@ -2,7 +2,7 @@ import pytest
 import time
 from unittest.mock import AsyncMock, patch
 
-from app.services.annotation_service import annotation_service
+from app.services.annotation_service import AnnotationService
 from app.schemas.annotation import (
     AnnotationCreateRequest,
     AnnotationUpdateRequest,
@@ -25,17 +25,20 @@ class TestAnnotationService:
     """Test cases for AnnotationService."""
 
     @pytest.fixture
-    def mock_room_registry(self):
-        """Mock room registry for testing."""
-        with patch('app.services.annotation_service.room_registry') as mock:
-            # Create a mock room state
-            mock_room_state = AsyncMock()
-            mock_room_state.next_seq = 2
-            
-            mock.append_update = AsyncMock(return_value=1)
-            mock.get_room = AsyncMock(return_value=mock_room_state)
-            mock.get_or_throw = AsyncMock(return_value=mock_room_state)
-            yield mock
+    def annotation_service(self):
+        """Create annotation service with mocked dependencies."""
+        service = AnnotationService()
+        
+        # Mock the room registry
+        mock_room_state = AsyncMock()
+        mock_room_state.next_seq = 2
+        
+        service.room_registry = AsyncMock()
+        service.room_registry.append_update = AsyncMock(return_value=1)
+        service.room_registry.get_room = AsyncMock(return_value=mock_room_state)
+        service.room_registry.get_or_throw = AsyncMock(return_value=mock_room_state)
+        
+        return service
 
     @pytest.fixture
     def text_create_request(self):
@@ -113,7 +116,7 @@ class TestAnnotationService:
         )
 
     @pytest.mark.asyncio
-    async def test_create_text_annotation(self, mock_room_registry, text_create_request):
+    async def test_create_text_annotation(self, annotation_service, text_create_request):
         """Test creating a text annotation."""
         annotation, seq = await annotation_service.create_annotation(
             "room1", "user1", text_create_request
@@ -129,13 +132,13 @@ class TestAnnotationService:
         assert annotation.created_by == "user1"
         assert seq == 1
         
-        mock_room_registry.append_update.assert_called_once()
-        call_args = mock_room_registry.append_update.call_args
+        annotation_service.room_registry.append_update.assert_called_once()
+        call_args = annotation_service.room_registry.append_update.call_args
         assert call_args[0][0] == "room1"  # room_id
         assert isinstance(call_args[0][1], bytes)  # update_bytes
 
     @pytest.mark.asyncio
-    async def test_create_line_annotation(self, mock_room_registry, line_create_request):
+    async def test_create_line_annotation(self, annotation_service, line_create_request):
         """Test creating a line annotation."""
         annotation, seq = await annotation_service.create_annotation(
             "room1", "user1", line_create_request
@@ -151,7 +154,7 @@ class TestAnnotationService:
         assert annotation.style.stroke_width == 2
 
     @pytest.mark.asyncio
-    async def test_create_rectangle_annotation(self, mock_room_registry, rectangle_create_request):
+    async def test_create_rectangle_annotation(self, annotation_service, rectangle_create_request):
         """Test creating a rectangle annotation."""
         annotation, seq = await annotation_service.create_annotation(
             "room1", "user1", rectangle_create_request
@@ -166,7 +169,7 @@ class TestAnnotationService:
         assert annotation.style.stroke_color == "#000000"
 
     @pytest.mark.asyncio
-    async def test_create_ellipse_annotation(self, mock_room_registry, ellipse_create_request):
+    async def test_create_ellipse_annotation(self, annotation_service, ellipse_create_request):
         """Test creating an ellipse annotation."""
         annotation, seq = await annotation_service.create_annotation(
             "room1", "user1", ellipse_create_request
@@ -181,7 +184,7 @@ class TestAnnotationService:
         assert annotation.style.opacity == 0.8
 
     @pytest.mark.asyncio
-    async def test_create_polygon_annotation(self, mock_room_registry, polygon_create_request):
+    async def test_create_polygon_annotation(self, annotation_service, polygon_create_request):
         """Test creating a polygon annotation."""
         annotation, seq = await annotation_service.create_annotation(
             "room1", "user1", polygon_create_request
@@ -194,7 +197,7 @@ class TestAnnotationService:
         assert annotation.style.stroke_width == 3
 
     @pytest.mark.asyncio
-    async def test_create_freehand_annotation(self, mock_room_registry, freehand_create_request):
+    async def test_create_freehand_annotation(self, annotation_service, freehand_create_request):
         """Test creating a freehand annotation."""
         annotation, seq = await annotation_service.create_annotation(
             "room1", "user1", freehand_create_request
@@ -207,7 +210,7 @@ class TestAnnotationService:
         assert annotation.style.stroke_width == 4
 
     @pytest.mark.asyncio
-    async def test_create_annotation_with_transform(self, mock_room_registry):
+    async def test_create_annotation_with_transform(self, annotation_service):
         """Test creating annotation with transformation."""
         transform = Transform(x=10, y=20, scale_x=1.5, scale_y=0.8, rotation=0.5)
         request = AnnotationCreateRequest(
@@ -229,7 +232,7 @@ class TestAnnotationService:
         assert annotation.transform.rotation == 0.5
 
     @pytest.mark.asyncio
-    async def test_create_annotation_with_grouping(self, mock_room_registry):
+    async def test_create_annotation_with_grouping(self, annotation_service):
         """Test creating annotation with group ID."""
         request = AnnotationCreateRequest(
             type=AnnotationType.TEXT,
@@ -245,9 +248,9 @@ class TestAnnotationService:
         assert annotation.group_id == "group1"
 
     @pytest.mark.asyncio
-    async def test_create_annotation_room_not_found(self, mock_room_registry):
+    async def test_create_annotation_room_not_found(self, annotation_service):
         """Test creating annotation when room doesn't exist."""
-        mock_room_registry.append_update.side_effect = KeyError("room not found")
+        annotation_service.room_registry.append_update.side_effect = KeyError("room not found")
         
         request = AnnotationCreateRequest(
             type=AnnotationType.TEXT,
@@ -259,7 +262,7 @@ class TestAnnotationService:
             await annotation_service.create_annotation("nonexistent", "user1", request)
 
     @pytest.mark.asyncio
-    async def test_update_annotation(self, mock_room_registry):
+    async def test_update_annotation(self, annotation_service):
         """Test updating an annotation."""
         update_request = AnnotationUpdateRequest(
             text="Updated text",
@@ -272,10 +275,10 @@ class TestAnnotationService:
         )
         
         assert seq == 1
-        mock_room_registry.append_update.assert_called_once()
+        annotation_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_annotation(self, mock_room_registry):
+    async def test_delete_annotation(self, annotation_service):
         """Test deleting an annotation."""
         deleted_id, seq = await annotation_service.delete_annotation(
             "room1", "annotation1", "user1"
@@ -283,10 +286,10 @@ class TestAnnotationService:
         
         assert deleted_id == "annotation1"
         assert seq == 1
-        mock_room_registry.append_update.assert_called_once()
+        annotation_service.room_registry.append_update.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_annotations(self, mock_room_registry):
+    async def test_get_annotations(self, annotation_service):
         """Test getting annotations for a room."""
         annotations, seq = await annotation_service.get_annotations("room1")
         
@@ -294,7 +297,7 @@ class TestAnnotationService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_group_annotations(self, mock_room_registry):
+    async def test_group_annotations(self, annotation_service):
         """Test grouping annotations."""
         request = GroupAnnotationsRequest(
             annotation_ids=["ann1", "ann2", "ann3"],
@@ -310,7 +313,7 @@ class TestAnnotationService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_group_annotations_auto_generate_id(self, mock_room_registry):
+    async def test_group_annotations_auto_generate_id(self, annotation_service):
         """Test grouping annotations with auto-generated group ID."""
         request = GroupAnnotationsRequest(
             annotation_ids=["ann1", "ann2"]
@@ -325,7 +328,7 @@ class TestAnnotationService:
         assert annotation_ids == ["ann1", "ann2"]
 
     @pytest.mark.asyncio
-    async def test_ungroup_annotations(self, mock_room_registry):
+    async def test_ungroup_annotations(self, annotation_service):
         """Test ungrouping annotations."""
         request = UngroupAnnotationsRequest(group_id="group1")
         
@@ -337,7 +340,7 @@ class TestAnnotationService:
         assert seq == 1
 
     @pytest.mark.asyncio
-    async def test_create_annotation_timestamps(self, mock_room_registry, text_create_request):
+    async def test_create_annotation_timestamps(self, annotation_service, text_create_request):
         """Test that annotations have proper timestamps."""
         with patch('time.time', return_value=1234567890.0):
             annotation, seq = await annotation_service.create_annotation(
@@ -349,21 +352,18 @@ class TestAnnotationService:
             assert annotation.created_by == "user1"
             assert annotation.updated_by == "user1"
 
-    @pytest.mark.asyncio
-    async def test_create_annotation_validation(self):
+    def test_create_annotation_validation(self):
         """Test annotation creation validation."""
         # Test text annotation without text content
-        request = AnnotationCreateRequest(
-            type=AnnotationType.TEXT,
-            geometry=TextGeometry(x=0, y=0)
-            # Missing text field
-        )
-        
         with pytest.raises(ValueError, match="Text content is required for text annotations"):
-            await annotation_service.create_annotation("room1", "user1", request)
+            AnnotationCreateRequest(
+                type=AnnotationType.TEXT,
+                geometry=TextGeometry(x=0, y=0),
+                text=None  # Explicitly None
+            )
 
     @pytest.mark.asyncio
-    async def test_annotation_visibility_and_locking(self, mock_room_registry):
+    async def test_annotation_visibility_and_locking(self, annotation_service):
         """Test annotation visibility and locking properties."""
         request = AnnotationCreateRequest(
             type=AnnotationType.TEXT,
