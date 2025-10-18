@@ -38,8 +38,7 @@ def test_database_session_creation(test_db):
 
     # Close session
     db.close()
-    # Check if session is properly closed (different SQLAlchemy versions may behave differently)
-    # assert not db.is_active
+    assert not db.is_active
 
 def test_get_db_dependency():
     """Test get_db dependency function."""
