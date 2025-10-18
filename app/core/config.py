@@ -1,13 +1,31 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
-    app_name: str = "Demo Python API"
-    debug: bool = False
-    
-    # Pydantic v2: use SettingsConfigDict instead of inner Config class
-    model_config = SettingsConfigDict(env_file=".env")
+    """Application settings."""
 
+    # Application settings
+    app_name: str = "Multi-User Task Assignment System"
+    debug: bool = False
+    version: str = "1.0.0"
+    
+    # Database settings
+    database_url: str = "sqlite:///./task_assignment.db"
+
+    # Security settings
+    secret_key: str = "your-secret-key-change-in-production"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+
+    # CORS settings
+    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8080"]
+
+    # Logging settings
+    log_level: str = "INFO"
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
 
 settings = Settings()
 
