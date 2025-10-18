@@ -9,7 +9,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.database import Base
-from app.models import user  # Import all models
+from app.models import user, task  # Import all models
 
 # this is the Alembic Config object
 config = context.config
