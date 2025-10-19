@@ -1,0 +1,49 @@
+---
+description: |
+  Generate a minimal, code-ready PRD for a FastAPI backend that can be built in ≤ 3 days.
+  The PRD must fit on one screen, be understandable by an LLM, and contain zero open questions.
+globs: ["**/*.md"]
+alwaysApply: true
+---
+
+# Cursor Rule – PRD Generator for AI Coding
+
+## 1. Golden Rules (never violate)
+- Every sentence must be **actionable** by an LLM.  
+- No “think about”, “consider”, “maybe”. Use **imperative voice**.  
+- One source of truth for: entities, endpoints, fields, business rules.  
+- Scope is **single** deployable service (FastAPI + SQLite is fine).  
+
+## 2. PRD Template (copy-paste → fill blanks)
+
+```markdown
+# Project: <ProjectName>
+
+## 1. Elevator Pitch (1 line)
+<One-sentence user value>
+
+## 2. Core Entities
+- <Entity>: <field1>:<type>, <field2>:<type>, …  
+- …
+
+## 3. API Surface (RESTful, no auth unless asked)
+POST   /v1/<entities>        → create  
+GET    /v1/<entities>        → list (pagination: page=1, size=20)  
+GET    /v1/<entities>/{id}   → get single  
+PATCH  /v1/<entities>/{id}   → update  
+DELETE /v1/<entities>/{id}   → delete  
+
+## 4. Business Rules
+1. <Rule>  
+2. …
+
+## 5. Acceptance Criteria
+- [ ] All endpoints return JSON + Pydantic schema  
+- [ ] Automatic OpenAPI docs reachable at /docs  
+- [ ] `make test` runs ≥ 80 % coverage  
+- [ ] ...
+
+## 6. Tech & Run
+- Stack: FastAPI, Pydantic v2, SQLite, pytest, uvicorn  
+- Port: 8000  
+- Env vars: none (use SQLite file db.sqlite3 in repo root)  

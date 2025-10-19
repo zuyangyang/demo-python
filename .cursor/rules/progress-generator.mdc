@@ -1,0 +1,37 @@
+---
+description: |
+  Generate a phase-by-phase progress.md for AI-coding projects.
+  Each phase = purpose + concrete tasks + automated tests (unit + integration).
+  The file must be append-only and parseable by an LLM to continue work.
+globs: ["progress.md"]
+alwaysApply: true
+---
+
+# Cursor Rule – progress.md Generator
+
+## 1. Golden Rules
+- One phase per `##` heading.  
+- Keep each phase ≤ 30 lines.  
+- Every task must start with `- [ ]` checkbox.  
+- Every test line must contain the word `test` and a file path or function name.  
+- Append only – never edit previous phases once marked `✅ Done`.
+
+## 2. Phase Template (copy-paste → fill)
+
+```markdown
+## Phase <N>: <Short Title>
+
+Purpose: <One-line why this phase exists>
+
+Tasks:
+- [ ] <Task 1> (e.g., scaffold FastAPI app)
+- [ ] <Task 2> (e.g., add SQLite connection)
+- [ ] <Task 3> (e.g., create URLMapping model)
+
+Unit Tests:
+- [ ] test_<module>.py::<function_name> – <what is asserted>
+
+Integration Tests:
+- [ ] test_<endpoint>.py::<test_name> – <HTTP status & payload check>
+
+✅ Done: <YYYY-MM-DD HH:MM>
