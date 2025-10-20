@@ -9,6 +9,7 @@ alwaysApply: false
 - Every task must start with `- [ ]` checkbox.  
 - Every test line must contain the word `test` and a file path or function name.  
 - Append only – never edit previous phases once marked `✅ Done`.
+- Update README.md at the end of final phase.
 
 ## 2. Phase Template (copy-paste → fill)
 
