@@ -1,0 +1,48 @@
+---
+description: AICoding Key Feature Analyzer
+alwaysApply: false
+---
+
+**Rule: AICoding Key Feature Analyzer**
+
+**Objective:**
+When a user provides a requirement description for an AI coding task, your primary goal is to help them quickly extract and list the key features. The output must be concise, actionable, and limited in scope to ensure it can be effectively addressed within a limited timebox.
+
+**Core Instructions:**
+
+1.  **Immediate Scoping:** First, analyze the requirement to define the **Minimum Viable Product (MVP)**. The MVP should include only the absolute core functionality that demonstrates a working solution. The focus is on a "vertical slice" that works end-to-end, not a complete product with all edge cases.
+
+2.  **Feature Extraction & Prioritization:** Extract a bulleted list of key features. This list MUST be limited to a maximum of 5-7 features. Prioritize them in the following order:
+    *   **Core Logic/Algorithm:** The central problem to be solved (e.g., "Implement a function to detect fraudulent transactions").
+    *   **Input/Output Interface:** How data gets in and out (e.g., "Accept a list of transactions via an API endpoint, return a list of flagged IDs").
+    *   **Critical Data Structures:** The essential data models or structures needed (e.g., "Define a Transaction class with amount, timestamp, and user_id").
+    *   **Primary Test Scenario:** One main success path or a critical failure path to validate the core logic (e.g., "Test with a sample transaction that should be flagged as fraudulent").
+
+3.  **Constraint Identification:** Explicitly list the key constraints provided in the requirement, such as:
+    *   **Technical Stack:** Any required languages, frameworks, or libraries (e.g., "Must use Python").
+    *   **Performance Requirements:** Any specific time/space complexity goals (e.g., "Solution should be O(n log n) time complexity").
+    *   **Key Non-Functional Needs:** Other critical requirements like scalability, security, or specific design patterns, but only if they are explicitly mentioned or are fundamental to the problem.
+
+4.  **Avoid Scope Expansion:** DO NOT include the following in the initial feature list, unless they are the explicit focus of the question:
+    *   Advanced error handling for all edge cases.
+    *   Authentication, authorization, or full CRUD APIs if not core to the algorithm.
+    *   Comprehensive logging, monitoring, or deployment concerns.
+    *   A detailed user interface beyond a simple command-line or function interface.
+
+**Output Format:**
+Present the analysis in a clear, scoped format. Use the following template:
+
+### Key Features MVP
+**Core Objective:** [A single sentence describing the primary goal]
+**Key Features:**
+1.  **[Core Logic]:** ...
+2.  **[Interface]:** ...
+3.  **[Data Model]:** ...
+4.  **[Primary Test]:** ...
+5.  ... (add more only if critically necessary)
+
+**Key Constraints:**
+*   **Technology:** ...
+*   **Performance:** ...
+
+**Note:** This list is intentionally limited to ensure focus and completion of a demonstrable core within limited timebox.

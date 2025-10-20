@@ -3,7 +3,7 @@ description: |
   Generate a minimal, code-ready PRD for a FastAPI backend that can be built in ≤ 3 days.
   The PRD must fit on one screen, be understandable by an LLM, and contain zero open questions.
 globs: ["**/*.md"]
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Cursor Rule – PRD Generator for AI Coding
