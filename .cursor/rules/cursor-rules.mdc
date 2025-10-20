@@ -1,6 +1,5 @@
 ---
-description: How to add or edit Cursor rules in our project
-globs:
+globs: **/*.mdc
 alwaysApply: false
 ---
 # Cursor Rules Location

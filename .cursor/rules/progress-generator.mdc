@@ -1,12 +1,6 @@
 ---
-description: |
-  Generate a phase-by-phase progress.md for AI-coding projects.
-  Each phase = purpose + concrete tasks + automated tests (unit + integration).
-  The file must be append-only and parseable by an LLM to continue work.
-globs: ["progress.md"]
 alwaysApply: false
 ---
-
 # Cursor Rule – progress.md Generator
 
 ## 1. Golden Rules
