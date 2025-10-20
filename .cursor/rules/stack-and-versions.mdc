@@ -63,3 +63,6 @@ alwaysApply: true
 - Pin versions in production for reproducibility; keep caret/greater-equal ranges only for development.
 - Use environment variables for config; do not commit `.env`.
 - Prefer structured logging and central error handling.
+- Use `uv` to run Python and tooling consistently:
+  - `uv run uvicorn app.main:app --reload` during development
+  - `uv run pytest -q` to run tests

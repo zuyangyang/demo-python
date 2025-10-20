@@ -27,6 +27,8 @@ When a user provides a requirement description for an AI coding task, your prima
     *   Comprehensive logging, monitoring, or deployment concerns.
     *   A detailed user interface beyond a simple command-line or function interface.
 
+5.  **Storage Choice Guideline:** When identifying features that need data storage, prefer in-memory storage for the MVP to keep scope minimal; switch to SQLite if simple persistent storage is required.
+
 **Output Format:**
 Present the analysis in a clear, scoped format. Use the following template:
 
