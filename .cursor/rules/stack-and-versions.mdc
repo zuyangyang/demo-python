@@ -54,6 +54,162 @@ alwaysApply: true
   - Best practices:
     - Keep rules consistent with PEP 8; run in pre-commit.
 
+## Code Style and Quality Standards
+
+All code MUST strictly follow **PEP 8** style guidelines. This ensures consistency, readability, and maintainability across the codebase.
+
+### PEP 8 Naming Conventions
+- **Modules and packages**: `lowercase_with_underscores.py`
+- **Classes**: `CapWords` (PascalCase)
+- **Functions and methods**: `lowercase_with_underscores`
+- **Variables**: `lowercase_with_underscores`
+- **Constants**: `UPPERCASE_WITH_UNDERSCORES`
+- **Private attributes**: `_leading_underscore`
+- **Type variables**: `CapWords` (e.g., `T`, `ModelT`)
+
+### Formatting Standards
+- **Line length**: Maximum 88 characters (Black default, slightly more permissive than PEP 8's 79)
+- **Indentation**: 4 spaces (never tabs)
+- **Blank lines**:
+  - Two blank lines between top-level classes and functions
+  - One blank line between methods inside a class
+  - Use blank lines sparingly inside functions to indicate logical sections
+- **Imports**:
+  - Always at the top of the file
+  - Grouped in order: standard library, third-party, local
+  - Separated by blank lines between groups
+  - Alphabetically sorted within each group
+  - Absolute imports preferred over relative
+
+### Import Example
+```python
+# Standard library imports
+import os
+import sys
+from typing import Any, Dict, List, Optional
+
+# Third-party imports
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+# Local application imports
+from app.core.config import settings
+from app.core.exceptions import APIException
+from app.models.user import User
+from app.schemas.user import UserCreate, UserResponse
+```
+
+### Whitespace Rules
+- Avoid trailing whitespace
+- No spaces around `=` in keyword arguments: `function(arg=value)`
+- Spaces around operators: `a = b + c`, not `a=b+c`
+- No space before comma/colon, one space after: `[1, 2, 3]`, `{"key": value}`
+- No spaces inside brackets: `list[0]`, not `list[ 0 ]`
+
+### Documentation Standards
+- **Docstrings**: Required for all public modules, functions, classes, and methods
+- Use triple double-quotes: `"""Docstring content"""`
+- Follow Google or NumPy docstring style consistently
+- Include type hints in function signatures (not in docstrings)
+
+### Docstring Example
+```python
+def process_user_data(user_id: int, include_deleted: bool = False) -> Dict[str, Any]:
+    """Process and return user data with related information.
+    
+    Args:
+        user_id: The unique identifier of the user.
+        include_deleted: Whether to include soft-deleted records.
+        
+    Returns:
+        A dictionary containing processed user data and metadata.
+        
+    Raises:
+        HTTPException: If user is not found or access is denied.
+    """
+    pass
+```
+
+### Type Hints
+- **Always** use type hints for function parameters and return values
+- Use `typing` module for complex types: `List`, `Dict`, `Optional`, `Union`
+- Python 3.10+ syntax preferred: `list[str]` over `List[str]` where supported
+- Use `-> None` explicitly for functions with no return value
+
+### Type Hints Example
+```python
+from typing import Optional
+
+async def get_user_by_email(
+    email: str,
+    db: Session,
+    include_inactive: bool = False
+) -> Optional[User]:
+    """Retrieve user by email address."""
+    pass
+```
+
+### Code Quality Rules
+- **Functions**: Keep them focused and single-purpose (max ~50 lines)
+- **Comprehensions**: Use for simple transformations; use loops for complex logic
+- **Error handling**: Use specific exceptions, not bare `except:`
+- **String formatting**: Prefer f-strings over `.format()` or `%` formatting
+- **Comparisons**:
+  - Use `is` for `None`: `if value is None:`
+  - Use `not` for boolean: `if not condition:`
+  - Use `if seq:` to check empty sequences, not `if len(seq) == 0:`
+
+### Examples of Good vs. Bad Code
+
+**Good:**
+```python
+def calculate_total_price(items: list[dict[str, Any]], tax_rate: float = 0.1) -> float:
+    """Calculate total price including tax."""
+    subtotal = sum(item["price"] * item["quantity"] for item in items)
+    return subtotal * (1 + tax_rate)
+
+
+class UserService:
+    """Service for managing user operations."""
+    
+    def __init__(self, repository: UserRepository) -> None:
+        self._repository = repository
+    
+    async def create_user(self, user_data: UserCreate) -> User:
+        """Create a new user with validation."""
+        if await self._repository.exists_by_email(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        return await self._repository.create(user_data)
+```
+
+**Bad:**
+```python
+def CalculateTotalPrice(Items,TaxRate=0.1):  # Wrong naming, no type hints
+    subTotal=0  # Wrong variable naming
+    for item in Items:
+        subTotal=subTotal+item["price"]*item["quantity"]  # Missing spaces
+    return subTotal*(1+TaxRate)
+
+class userService:  # Wrong class naming
+    def __init__(self,repository):  # Missing space after comma
+        self.repository=repository  # Missing spaces around =
+    
+    def createUser(self,userData):  # Wrong method naming, no type hints
+        if self.repository.existsByEmail(userData.email)==True:  # Don't compare to True
+            raise Exception("Email exists")  # Too generic exception
+        return self.repository.create(userData)
+```
+
+### Enforcement
+- Run `ruff check .` before committing to catch PEP 8 violations
+- Configure pre-commit hooks to automatically check style
+- Use `ruff format .` (or `black .`) to auto-format code
+- All CI/CD pipelines should include linting checks
+
 ## Notes on Compatibility
 - FastAPI 0.119.0 pairs with Starlette 0.48.0 and Pydantic 2.x.
 - Ensure all models/schemas use Pydantic v2 APIs (`model_dump`, `field_validator`).
