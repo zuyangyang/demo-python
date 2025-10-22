@@ -4,6 +4,8 @@ This module provides functionality to download OTF fonts and render
 text into PNG images with custom styling.
 """
 
+import io
+
 import requests
 from PIL import Image, ImageDraw, ImageFont
 from app.utils.font_cache import get_font_cache
@@ -118,4 +120,69 @@ def _create_image(
     draw.text((x, y), text, font=font, fill='black')
     
     return image
+
+
+def render_text(font_url: str, text: str, font_size: float, padding: int) -> bytes:
+    """Render text to PNG image using downloadable OTF font.
+    
+    Downloads an OTF font from the provided URL (with caching), renders
+    the given text with specified styling, and returns the result as PNG
+    image bytes. The text is rendered in black on a white background,
+    centered both horizontally and vertically with the specified padding.
+    
+    Args:
+        font_url: HTTP/HTTPS URL to OTF font file.
+        text: Text content to render (supports Unicode).
+        font_size: Font size in points (must be positive).
+        padding: Padding around text in pixels (must be non-negative).
+        
+    Returns:
+        PNG image as bytes.
+        
+    Raises:
+        ValueError: If text is empty, font_size is negative, or padding is negative.
+        requests.HTTPError: If font download fails or returns non-200 status.
+        requests.Timeout: If font download exceeds 30-second timeout.
+        requests.RequestException: For other network-related errors.
+        IOError: If font file is invalid or unsupported format.
+        
+    Example:
+        >>> font_url = "https://example.com/font.otf"
+        >>> image_bytes = render_text(font_url, "Hello", 48.0, 20)
+        >>> with open("output.png", "wb") as f:
+        ...     f.write(image_bytes)
+    """
+    # Validate parameters
+    if not text or text.strip() == "":
+        raise ValueError("Text cannot be empty")
+    
+    if font_size <= 0:
+        raise ValueError("Font size must be positive")
+    
+    if padding < 0:
+        raise ValueError("Padding cannot be negative")
+    
+    # Download font (with caching)
+    font_data = _download_font(font_url)
+    
+    # Load font from bytes
+    cache = get_font_cache()
+    try:
+        font_bytesio = io.BytesIO(font_data)
+        font = ImageFont.truetype(font_bytesio, size=font_size)
+    except Exception as e:
+        # Clear cache entry if font fails to load
+        cache.clear_font(font_url)
+        raise IOError(f"Failed to load font from {font_url}: {e}") from e
+    
+    # Calculate image dimensions
+    width, height = _calculate_dimensions(text, font, padding)
+    
+    # Create image with rendered text
+    image = _create_image(width, height, text, font, padding)
+    
+    # Convert image to PNG bytes
+    buffer = io.BytesIO()
+    image.save(buffer, format='PNG')
+    return buffer.getvalue()
 
