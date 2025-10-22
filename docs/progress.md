@@ -88,25 +88,25 @@ Integration Tests:
 Purpose: Implement text-to-image rendering with Pillow
 
 Tasks:
-- [ ] Implement _calculate_dimensions(text, font, padding) -> tuple[int, int] helper
-- [ ] Use ImageDraw.textbbox() to get text dimensions
-- [ ] Add padding * 2 to both width and height
-- [ ] Implement _create_image(width, height, text, font, padding) -> Image
-- [ ] Use Image.new('RGB', (width, height), 'white') for canvas
-- [ ] Use ImageDraw.Draw() to draw centered text in black
-- [ ] Calculate center position: ((width - text_width) // 2, (height - text_height) // 2)
-- [ ] Add proper error handling for invalid font data
+- [x] Implement _calculate_dimensions(text, font, padding) -> tuple[int, int] helper
+- [x] Use ImageDraw.textbbox() to get text dimensions
+- [x] Add padding * 2 to both width and height
+- [x] Implement _create_image(width, height, text, font, padding) -> Image
+- [x] Use Image.new('RGB', (width, height), 'white') for canvas
+- [x] Use ImageDraw.Draw() to draw centered text in black
+- [x] Calculate center position: ((width - text_width) // 2, (height - text_height) // 2)
+- [x] Add proper error handling for invalid font data
 
 Unit Tests:
-- [ ] test_text_render_service.py::test_calculate_dimensions – verify correct width/height with padding
-- [ ] test_text_render_service.py::test_create_image_returns_pil_image – verify Image object returned
-- [ ] test_text_render_service.py::test_image_has_white_background – verify RGB white background
-- [ ] test_text_render_service.py::test_text_is_centered – verify text position calculation
+- [x] test_text_render_service.py::test_calculate_dimensions – verify correct width/height with padding
+- [x] test_text_render_service.py::test_create_image_returns_pil_image – verify Image object returned
+- [x] test_text_render_service.py::test_image_has_white_background – verify RGB white background
+- [x] test_text_render_service.py::test_text_is_centered – verify text position calculation
 
 Integration Tests:
-- [ ] No integration tests for this phase (unit with mocks)
+- [x] No integration tests for this phase (unit with mocks)
 
-✅ Done: 
+✅ Done: Phase 4 completed. Implemented _calculate_dimensions() and _create_image() helper functions in app/services/text_render_service.py. The _calculate_dimensions() function uses ImageDraw.textbbox() to measure text dimensions and adds padding on all sides. The _create_image() function creates an RGB image with white background and draws centered black text. Added 4 comprehensive unit tests covering dimension calculation, PIL Image return type, white background verification, and text centering. All 10 tests (6 from Phase 3 + 4 from Phase 4) pass. Code follows PEP 8 standards with proper type hints and Google-style docstrings. No linting errors. 
 
 ---
 
@@ -221,8 +221,8 @@ Integration Tests:
 ## Summary
 
 **Total Phases:** 8
-**Completed:** 3/8
-**Overall Progress:** 37.5%
+**Completed:** 4/8
+**Overall Progress:** 50.0%
 
-**Next Action:** Start Phase 4 - Image Rendering Logic
+**Next Action:** Start Phase 5 - Main render_text Function
 

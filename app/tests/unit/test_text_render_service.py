@@ -4,8 +4,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from PIL import Image, ImageFont
 
-from app.services.text_render_service import _download_font
+from app.services.text_render_service import (
+    _calculate_dimensions,
+    _create_image,
+    _download_font,
+)
 from app.utils.font_cache import get_font_cache
 
 
@@ -96,3 +101,101 @@ class TestDownloadFont:
             
             with pytest.raises(requests.RequestException, match="Network error"):
                 _download_font("https://example.com/font.otf")
+
+
+class TestImageRendering:
+    """Test suite for image rendering functionality."""
+    
+    @pytest.fixture
+    def mock_font(self) -> ImageFont.FreeTypeFont:
+        """Create a mock font for testing."""
+        # Use a simple default font for testing
+        # Create a font that returns predictable textbbox values
+        mock_font = MagicMock(spec=ImageFont.FreeTypeFont)
+        return mock_font
+    
+    def test_calculate_dimensions(self) -> None:
+        """Verify correct width/height calculation with padding."""
+        # Create a mock font that returns predictable textbbox
+        mock_font = MagicMock(spec=ImageFont.FreeTypeFont)
+        
+        with patch("app.services.text_render_service.ImageDraw.Draw") as mock_draw_class:
+            mock_draw = MagicMock()
+            # Mock textbbox to return (left, top, right, bottom)
+            # Simulate text that is 100x50 pixels
+            mock_draw.textbbox.return_value = (0, 0, 100, 50)
+            mock_draw_class.return_value = mock_draw
+            
+            width, height = _calculate_dimensions("Test", mock_font, padding=20)
+            
+            # Expected: 100 + (20 * 2) = 140 width, 50 + (20 * 2) = 90 height
+            assert width == 140
+            assert height == 90
+            
+            # Verify textbbox was called with correct parameters
+            mock_draw.textbbox.assert_called_once_with((0, 0), "Test", font=mock_font)
+    
+    def test_create_image_returns_pil_image(self) -> None:
+        """Verify Image object is returned."""
+        mock_font = MagicMock(spec=ImageFont.FreeTypeFont)
+        
+        with patch("app.services.text_render_service.ImageDraw.Draw") as mock_draw_class:
+            mock_draw = MagicMock()
+            # Mock textbbox for text positioning
+            mock_draw.textbbox.return_value = (0, 0, 50, 20)
+            mock_draw_class.return_value = mock_draw
+            
+            result = _create_image(100, 60, "Test", mock_font, padding=10)
+            
+            # Verify it returns a PIL Image
+            assert isinstance(result, Image.Image)
+    
+    def test_image_has_white_background(self) -> None:
+        """Verify RGB white background is used."""
+        mock_font = MagicMock(spec=ImageFont.FreeTypeFont)
+        
+        with patch("app.services.text_render_service.ImageDraw.Draw") as mock_draw_class:
+            mock_draw = MagicMock()
+            mock_draw.textbbox.return_value = (0, 0, 50, 20)
+            mock_draw_class.return_value = mock_draw
+            
+            image = _create_image(100, 60, "Test", mock_font, padding=10)
+            
+            # Verify image mode is RGB
+            assert image.mode == 'RGB'
+            
+            # Verify image dimensions
+            assert image.size == (100, 60)
+            
+            # Check that background is white (255, 255, 255)
+            # Sample a corner pixel that shouldn't have text
+            pixel = image.getpixel((0, 0))
+            assert pixel == (255, 255, 255), f"Expected white background, got {pixel}"
+    
+    def test_text_is_centered(self) -> None:
+        """Verify text position calculation centers the text."""
+        mock_font = MagicMock(spec=ImageFont.FreeTypeFont)
+        
+        with patch("app.services.text_render_service.ImageDraw.Draw") as mock_draw_class:
+            mock_draw = MagicMock()
+            # Simulate text that is 60x30 pixels
+            mock_draw.textbbox.return_value = (0, 0, 60, 30)
+            mock_draw_class.return_value = mock_draw
+            
+            # Create 100x60 image with 60x30 text
+            _create_image(100, 60, "Test", mock_font, padding=10)
+            
+            # Verify draw.text was called
+            assert mock_draw.text.called
+            
+            # Extract the position from the call
+            call_args = mock_draw.text.call_args
+            position = call_args[0][0]  # First positional argument
+            
+            # Expected position: x = (100 - 60) // 2 = 20, y = (60 - 30) // 2 = 15
+            assert position == (20, 15), f"Expected position (20, 15), got {position}"
+            
+            # Verify text was drawn with correct parameters
+            assert call_args[0][1] == "Test"  # Text content
+            assert call_args[1]["font"] == mock_font  # Font
+            assert call_args[1]["fill"] == 'black'  # Text color
