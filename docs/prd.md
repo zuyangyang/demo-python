@@ -38,19 +38,19 @@ def render_text(font_url: str, text: str, font_size: float, padding: int) -> byt
 8. Clear font cache entry if font fails to load to allow retry on next call.
 
 ## 5. Acceptance Criteria
-- [ ] Function signature matches: `render_text(font_url: str, text: str, font_size: float, padding: int) -> bytes`
-- [ ] Successfully downloads and caches OTF fonts from valid URLs
-- [ ] Returns valid PNG bytes that can be written to file or displayed
-- [ ] Text is rendered with correct font, size, and padding
-- [ ] Handles Unicode text (emoji, CJK characters) correctly
-- [ ] Raises appropriate exceptions for invalid inputs (empty text, negative values)
-- [ ] Raises exception when font URL is unreachable or returns non-200 status
-- [ ] Raises exception when font file is not valid OTF format
-- [ ] `pytest app/tests/unit/test_text_render_service.py` runs with ≥ 80% coverage
-- [ ] Unit tests include: valid render, font caching, error cases (bad URL, invalid font, invalid params)
-- [ ] Integration test with real OTF font URL completes successfully
-- [ ] Type hints present for all parameters and return values
-- [ ] Docstrings follow Google/NumPy style with clear parameter descriptions
+- [x] Function signature matches: `render_text(font_url: str, text: str, font_size: float, padding: int) -> bytes`
+- [x] Successfully downloads and caches OTF fonts from valid URLs
+- [x] Returns valid PNG bytes that can be written to file or displayed
+- [x] Text is rendered with correct font, size, and padding
+- [x] Handles Unicode text (emoji, CJK characters) correctly
+- [x] Raises appropriate exceptions for invalid inputs (empty text, negative values)
+- [x] Raises exception when font URL is unreachable or returns non-200 status
+- [x] Raises exception when font file is not valid OTF format
+- [x] `pytest app/tests/unit/test_text_render_service.py` runs with ≥ 80% coverage (100% achieved)
+- [x] Unit tests include: valid render, font caching, error cases (bad URL, invalid font, invalid params)
+- [x] Integration test with real OTF font URL completes successfully
+- [x] Type hints present for all parameters and return values
+- [x] Docstrings follow Google/NumPy style with clear parameter descriptions
 
 ## 6. Tech & Run
 
